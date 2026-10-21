@@ -22,6 +22,11 @@ import me.jxl.kiosk.plugins.KsTheme;
  * the same layout fills a wide bar display or a tablet.
  */
 final class BoardView extends View {
+    /** What 100% means for Text size, Value size and Label size, tuned on a 10 inch tablet. */
+    private static final float TEXT = 1.05f;
+    private static final float VALUE = 0.9f;
+    private static final float LABEL = 1.3f;
+
     interface Logos {
         Path logo(String name);
     }
@@ -100,7 +105,7 @@ final class BoardView extends View {
     /** One percent of the shorter side, times the Text size setting. Type and icons scale with it. */
     private float unit() {
         float scale = board == null ? 1f : board.look.scale;
-        return Math.min(getWidth(), getHeight()) / 100f * scale;
+        return Math.min(getWidth(), getHeight()) / 100f * TEXT * scale;
     }
 
     private void resolvePalette(Config.Look look) {
@@ -268,11 +273,11 @@ final class BoardView extends View {
         boolean alert = value != null && !Double.isNaN(tile.alertAbove) && value.number >= tile.alertAbove;
 
         // Label size scales the label, Value size the number. At 100 the number fills the tile the way it always has.
-        float labelSize = Math.min(height * 0.12f, width * 0.08f) * look.labelScale;
+        float labelSize = Math.min(height * 0.12f, width * 0.08f) * LABEL * look.labelScale;
         boolean hasLabel = !tile.label.isEmpty();
         float labelRoom = hasLabel ? labelSize * 1.7f : 0;
         // Rubik's figures stand about 0.7 of the type size. A larger value stops where it would crowd the label.
-        float size = Math.min(Math.min(height * 0.42f, width * 0.25f) * look.valueScale, (height * 0.92f - labelRoom) / 0.7f);
+        float size = Math.min(Math.min(height * 0.42f, width * 0.25f) * VALUE * look.valueScale, (height * 0.92f - labelRoom) / 0.7f);
         float unitGap = size * 0.06f;
         text.setTypeface(theme.typeface(500));
         text.setTextSize(size);

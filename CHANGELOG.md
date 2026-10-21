@@ -17,3 +17,4 @@
 - Draw the screensaver in the Kiosk Satellite look with its typeface, radii and spacing. It follows the Kiosk Satellite theme in light and dark until Custom colors is on, which adds a text color.
 - Add Value size for the sensor values and Label size for the labels under them.
 - Add the EK and Seasonic footer logos.
+- Tune what 100% means for Text size, Value size and Label size.
