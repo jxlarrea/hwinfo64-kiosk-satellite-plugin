@@ -284,12 +284,25 @@
       ]
     },
     {
+      "key": "theme",
+      "type": "select",
+      "title": "Theme",
+      "group": "Screensaver",
+      "options": [
+        "Auto",
+        "Light",
+        "Dark"
+      ],
+      "default": "Auto",
+      "description": "Auto follows the Kiosk Satellite theme."
+    },
+    {
       "key": "customColors",
       "type": "boolean",
       "title": "Custom colors",
       "group": "Screensaver",
       "default": false,
-      "description": "Off follows the Kiosk Satellite theme, light or dark. On uses the colors below."
+      "description": "Use your own colors below in place of the theme."
     },
     {
       "key": "accentColor",

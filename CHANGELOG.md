@@ -18,3 +18,4 @@
 - Add Value size for the sensor values and Label size for the labels under them.
 - Add the EK and Seasonic footer logos.
 - Tune what 100% means for Text size, Value size and Label size.
+- Add Theme to show the screensaver light or dark, or Auto to follow the Kiosk Satellite theme.

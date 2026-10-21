@@ -83,6 +83,8 @@ final class Config {
 
     /** How the screensaver looks. Without custom colors it takes the KS theme's, light or dark. */
     static final class Look {
+        /** Auto, Light or Dark. */
+        final String theme;
         final boolean custom;
         final int accent;
         final int surface;
@@ -95,7 +97,8 @@ final class Config {
         /** The labels under the sensor values. */
         final float labelScale;
 
-        Look(boolean custom, int accent, int surface, int background, int text, float scale, float valueScale, float labelScale) {
+        Look(String theme, boolean custom, int accent, int surface, int background, int text, float scale, float valueScale, float labelScale) {
+            this.theme = theme;
             this.custom = custom;
             this.accent = accent;
             this.surface = surface;
@@ -165,7 +168,7 @@ final class Config {
                     text(row.get("footerText")), text(row.get("footerLogo")), text(row.get("footerIcon")), Collections.unmodifiableList(tiles)));
         }
         this.panels = Collections.unmodifiableList(panels);
-        look = new Look(Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
+        look = new Look(text(settings.get("theme")).isEmpty() ? "Auto" : text(settings.get("theme")), Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
                 color(settings.get("panelColor"), 0xFF2A2B2F), color(settings.get("backgroundColor"), 0xFF202124),
                 color(settings.get("textColor"), 0xFFE8EAED), (float) number(settings.get("textSize"), 100) / 100f,
                 (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f);

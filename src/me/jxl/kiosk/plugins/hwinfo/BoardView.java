@@ -108,7 +108,34 @@ final class BoardView extends View {
         return Math.min(getWidth(), getHeight()) / 100f * TEXT * scale;
     }
 
+    /**
+     * KS's own light and dark colors, for a Theme that differs from the one KS shows: primary, surface,
+     * surfaceContainer, onSurface, onSurfaceVariant, outlineVariant and error.
+     */
+    private static final int[] KS_LIGHT = {0xFF488284, 0xFFF5F4F2, 0xFFFFFFFF, 0xFF444444, 0xFF5D6066, 0xFFE3E0DA, 0xFFA9501F};
+    private static final int[] KS_DARK = {0xFF488284, 0xFF202124, 0xFF2A2B2F, 0xFFE8EAED, 0xFFB6BABF, 0xFF3C3E43, 0xFFD97E4C};
+
     private void resolvePalette(Config.Look look) {
+        boolean dark = "Dark".equals(look.theme) || !"Light".equals(look.theme) && theme.isDark();
+        // The live KS colors whenever they are the ones asked for, so a KS that changes its palette carries over.
+        if (dark == theme.isDark()) {
+            palette.accent = theme.color("primary");
+            palette.background = theme.color("surface");
+            palette.panel = theme.color("surfaceContainer");
+            palette.text = theme.color("onSurface");
+            palette.muted = theme.color("onSurfaceVariant");
+            palette.line = theme.color("outlineVariant");
+            palette.alert = theme.color("error");
+        } else {
+            int[] colors = dark ? KS_DARK : KS_LIGHT;
+            palette.accent = colors[0];
+            palette.background = colors[1];
+            palette.panel = colors[2];
+            palette.text = colors[3];
+            palette.muted = colors[4];
+            palette.line = colors[5];
+            palette.alert = colors[6];
+        }
         if (look.custom) {
             palette.background = look.background;
             palette.panel = look.surface;
@@ -116,15 +143,7 @@ final class BoardView extends View {
             palette.muted = withAlpha(look.text, 0.7f);
             palette.accent = look.accent;
             palette.line = withAlpha(look.text, 0.12f);
-        } else {
-            palette.background = theme.color("surface");
-            palette.panel = theme.color("surfaceContainer");
-            palette.text = theme.color("onSurface");
-            palette.muted = theme.color("onSurfaceVariant");
-            palette.accent = theme.color("primary");
-            palette.line = theme.color("outlineVariant");
         }
-        palette.alert = theme.color("error");
     }
 
     private void layout() {

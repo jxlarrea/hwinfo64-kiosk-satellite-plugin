@@ -48,7 +48,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Computers | Update every | Seconds between updates, 1 to 30 |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
 | Screensaver | Panels | Title, icon, columns, stacking, sensors, header sensor, footer text and logo of each panel |
-| Screensaver | Custom colors, Accent color, Panel color, Background, Text color, Text size, Value size, Label size | How the screensaver looks. It follows the Kiosk Satellite theme, light or dark, until you turn on Custom colors |
+| Screensaver | Theme, Custom colors, Accent color, Panel color, Background, Text color, Text size, Value size, Label size | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |
 | Automatic screensaver | Switch screensaver automatically | Turns the rule on |
 | Automatic screensaver | Sensor, When it is, Limit | The condition, such as a CPU temperature above 80 |
 | Automatic screensaver | For at least, Switch back after | Seconds the condition must hold before switching and before switching back |
