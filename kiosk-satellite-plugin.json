@@ -61,6 +61,14 @@
       "description": "Seconds between updates. HWiNFO itself updates every 2 seconds unless you changed its polling period."
     },
     {
+      "key": "statusTile",
+      "type": "boolean",
+      "title": "Overview tile",
+      "group": "Computers",
+      "default": true,
+      "description": "Shows how many PCs are online on the Remote Admin Overview."
+    },
+    {
       "key": "exports",
       "type": "list",
       "title": "Sensors",

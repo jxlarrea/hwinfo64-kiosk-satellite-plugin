@@ -253,6 +253,15 @@ public final class HwinfoPluginTest {
             waitFor(() -> host.commands.contains("clearScreensaverMode"), "the rule handing the screensaver back");
             check(Boolean.FALSE.equals(host.binary.get("rule_active")), "rule sensor off again");
 
+            // The Overview tile goes away with its setting and comes back.
+            waitFor(() -> "on|1 of 1 PC online".equals(host.tile), "the Overview tile");
+            Map<String, Object> noTile = settings(server.getLocalPort());
+            noTile.put("statusTile", false);
+            plugin.configure(noTile);
+            waitFor(() -> host.tile == null, "the Overview tile removed");
+            plugin.configure(settings(server.getLocalPort()));
+            waitFor(() -> "on|1 of 1 PC online".equals(host.tile), "the Overview tile back");
+
             // With a settings page open, the picker values follow the live reading.
             String fpsId = "TESTPC/f0000ff0.0.8000000";
             fps = 75;
@@ -308,13 +317,15 @@ public final class HwinfoPluginTest {
         final List<String> commands = new CopyOnWriteArrayList<>();
         final List<String> results = new CopyOnWriteArrayList<>();
         volatile OverlayFactory screensaver;
+        volatile String tile;
 
         @Override public void showWindow(String title, String message, String buttonLabel) {}
         @Override public void hideWindow() {}
         @Override public void log(String message) {}
         @Override public void status(String message, boolean error) {}
         @Override public void subscribe(String event) {}
-        @Override public void publishStatusTile(String key, String title, String level, String text) {}
+        @Override public void publishStatusTile(String key, String title, String level, String text) { tile = level + "|" + text; }
+        @Override public void removeStatusTile(String key) { tile = null; }
         @Override public void publishScreensaverView(String key, String title, OverlayFactory factory) { screensaver = factory; }
         @Override public void setSettingChoices(String key, List<Map<String, Object>> list) { choices.put(key, new ArrayList<>(list)); }
         @Override public boolean setupResult(String run, String state, String message) { results.add(run + ":" + state); return true; }

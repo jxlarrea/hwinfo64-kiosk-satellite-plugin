@@ -112,6 +112,7 @@ final class Config {
 
     final List<Computer> computers;
     final int intervalSeconds;
+    final boolean statusTile;
     final List<Export> exports;
     final List<Panel> panels;
     final Look look;
@@ -144,6 +145,7 @@ final class Config {
         }
         this.computers = Collections.unmodifiableList(computers);
         intervalSeconds = Math.max(1, (int) number(settings.get("interval"), 2));
+        statusTile = !Boolean.FALSE.equals(settings.get("statusTile"));
 
         List<Export> exports = new ArrayList<>();
         for (Map<String, Object> row : rows(settings.get("exports"))) {

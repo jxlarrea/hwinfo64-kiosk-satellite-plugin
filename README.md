@@ -50,6 +50,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | --- | --- | --- |
 | Computers | Computers | Name and address of each PC. Add `:port` to the address if HWiNFO doesn't use 27007. Up to 8 |
 | Computers | Update every | Seconds between updates, 1 to 30 |
+| Computers | Overview tile | Shows how many PCs are online on the Remote Admin Overview |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
 | Screensaver | Panels | Title, icon, columns, stacking, sensors, header sensor, footer text and logo of each panel |
 | Screensaver | Theme, Custom colors, Accent color, Panel color, Background, Text color, Text size, Value size, Label size | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |

@@ -91,6 +91,8 @@ public final class HwinfoPlugin implements KioskPlugin {
     private boolean shownByAction;
     private long ruleSince;
     private String lastStatus = "";
+    /** What the Overview tile last showed, or null while it is not on the Overview. */
+    private String lastTile;
     private Map<String, Path> logos;
     private JSONObject brandPaths;
 
@@ -604,13 +606,25 @@ public final class HwinfoPlugin implements KioskPlugin {
         if (!status.equals(lastStatus)) {
             lastStatus = status;
             host.status(clip(status, 1000), error);
-            try {
-                String level = monitors.isEmpty() ? "" : online == monitors.size() ? "on" : online > 0 ? "warn" : "off";
-                String tile = monitors.isEmpty() ? "No computers" : online + " of " + monitors.size() + (monitors.size() == 1 ? " PC online" : " PCs online");
-                host.publishStatusTile("pcs", "PC monitor", level, tile);
-            } catch (UnsupportedOperationException | LinkageError ignored) {
-                // Older Kiosk Satellite without status tiles.
+        }
+        publishTile(current, online);
+    }
+
+    /** The Overview tile with how many PCs answer, when the Overview tile setting is on. */
+    private void publishTile(Config current, int online) {
+        try {
+            if (!current.statusTile) {
+                if (lastTile != null) host.removeStatusTile("pcs");
+                lastTile = null;
+                return;
             }
+            String level = monitors.isEmpty() ? "" : online == monitors.size() ? "on" : online > 0 ? "warn" : "off";
+            String text = monitors.isEmpty() ? "No computers" : online + " of " + monitors.size() + (monitors.size() == 1 ? " PC online" : " PCs online");
+            if ((level + "|" + text).equals(lastTile)) return;
+            host.publishStatusTile("pcs", "PC monitor", level, text);
+            lastTile = level + "|" + text;
+        } catch (UnsupportedOperationException | LinkageError ignored) {
+            // Older Kiosk Satellite without status tiles.
         }
     }
 
