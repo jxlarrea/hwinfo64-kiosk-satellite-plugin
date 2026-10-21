@@ -7,7 +7,7 @@ A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that rea
 - **PC sensors screensaver.** Panels with a title, an icon, a grid of large readings and an optional footer with a logo, drawn natively by the kiosk. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own readings.
 - **Automatic switching.** Show PC sensors while a reading stays past a limit, for example while the game's frame rate stays above 60 FPS for 30 seconds. Your own screensaver setting returns once it drops again.
 
-This plugin is not affiliated with or endorsed by REALiX or HWiNFO.
+This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is the official HWiNFO logo, used only to show the service it connects to.
 
 ## Requirements
 

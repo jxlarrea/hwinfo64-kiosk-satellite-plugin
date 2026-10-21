@@ -13,8 +13,9 @@ Brand names and logos are trademarks of their respective owners. Their use does
 not imply endorsement.
 
 Plugin icon (assets/icon.png)
-Includes the "cpu-64-bit" glyph from Material Design Icons by Pictogrammers,
-licensed under the Apache License 2.0.
+The official HWiNFO application icon, taken from HWiNFO64.exe and filled out to
+a square so Kiosk Satellite can round its corners. It belongs to its owner and
+is used only to show which service the plugin connects to.
 
 HWiNFO is a trademark of its owner. This plugin is not affiliated with or endorsed
 by REALiX or HWiNFO.
