@@ -267,8 +267,8 @@ final class BoardView extends View {
         String unit = value == null || !tile.unit || binary ? "" : value.unit;
         boolean alert = value != null && !Double.isNaN(tile.alertAbove) && value.number >= tile.alertAbove;
 
-        // Text size scales the label, Value size the number. At 100 the number fills the tile the way it always has.
-        float labelSize = Math.min(height * 0.12f, width * 0.08f) * look.scale;
+        // Label size scales the label, Value size the number. At 100 the number fills the tile the way it always has.
+        float labelSize = Math.min(height * 0.12f, width * 0.08f) * look.labelScale;
         boolean hasLabel = !tile.label.isEmpty();
         float labelRoom = hasLabel ? labelSize * 1.7f : 0;
         // Rubik's figures stand about 0.7 of the type size. A larger value stops where it would crowd the label.
