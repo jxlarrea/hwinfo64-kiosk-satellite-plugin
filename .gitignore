@@ -1,0 +1,8 @@
+dist/
+__pycache__/
+*.pyc
+.claude/
+.remember/
+.vscode/
+.playwright-mcp/
+AGENTS.md

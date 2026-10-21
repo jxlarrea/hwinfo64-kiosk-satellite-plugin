@@ -1,0 +1,444 @@
+{
+  "schemaVersion": 1,
+  "id": "hwinfo-pc-monitor",
+  "name": "HWiNFO PC Monitor",
+  "version": "1.0.0",
+  "apiVersion": 1,
+  "minAndroidSdk": 24,
+  "entryClass": "me.jxl.kiosk.plugins.hwinfo.HwinfoPlugin",
+  "description": "Shows the sensors of your PCs on the kiosk through HWiNFO's Remote Sensor Monitoring. Pick readings to send to Home Assistant, lay them out in a native PC sensors screensaver and switch to it on its own while you game.",
+  "author": "jxlarrea",
+  "license": "Apache-2.0",
+  "capabilities": [
+    "entities",
+    "screensaver",
+    "screensaver.mode",
+    "host.read",
+    "host.control"
+  ],
+  "headless": true,
+  "icon": "icon.png",
+  "settings": [
+    {
+      "key": "computers",
+      "type": "list",
+      "title": "Computers",
+      "group": "Computers",
+      "description": "PCs running HWiNFO with Remote Sensor Monitoring on. Turn it on in HWiNFO under Settings > Remote Monitoring.",
+      "addTitle": "Add computer",
+      "maxItems": 8,
+      "row": {
+        "title": "name",
+        "subtitle": "address"
+      },
+      "default": [],
+      "fields": [
+        {
+          "key": "name",
+          "type": "string",
+          "title": "Name",
+          "required": true,
+          "description": "How this PC shows in the reading pickers and in Home Assistant."
+        },
+        {
+          "key": "address",
+          "type": "string",
+          "title": "Address",
+          "required": true,
+          "description": "The PC's IP address or host name. Add :port if HWiNFO doesn't use 27007."
+        }
+      ]
+    },
+    {
+      "key": "interval",
+      "type": "number",
+      "title": "Update every",
+      "group": "Computers",
+      "default": 2,
+      "min": 1,
+      "max": 30,
+      "step": 1,
+      "description": "Seconds between readings. HWiNFO itself updates every 2 seconds unless you changed its polling period."
+    },
+    {
+      "key": "exports",
+      "type": "list",
+      "title": "Readings",
+      "group": "Home Assistant",
+      "description": "Each reading becomes a sensor on this kiosk's ESPHome device. Every computer also gets an online sensor.",
+      "addTitle": "Add reading",
+      "maxItems": 22,
+      "row": {
+        "title": "reading",
+        "subtitle": "name"
+      },
+      "default": [],
+      "fields": [
+        {
+          "key": "reading",
+          "type": "string",
+          "title": "Reading",
+          "choices": "plugin",
+          "required": true
+        },
+        {
+          "key": "name",
+          "type": "string",
+          "title": "Name",
+          "description": "Leave empty to use the computer and reading names."
+        }
+      ]
+    },
+    {
+      "key": "panels",
+      "type": "list",
+      "title": "Panels",
+      "group": "Screensaver",
+      "description": "Pick PC sensors (HWiNFO PC Monitor) under Screensaver > Screensaver mode to show these panels.",
+      "addTitle": "Add panel",
+      "maxItems": 12,
+      "row": {
+        "title": "title",
+        "subtitle": "footerText",
+        "icon": "icon"
+      },
+      "default": [],
+      "fields": [
+        {
+          "key": "title",
+          "type": "string",
+          "title": "Title",
+          "required": true
+        },
+        {
+          "key": "icon",
+          "type": "icon",
+          "title": "Icon"
+        },
+        {
+          "key": "columns",
+          "type": "select",
+          "title": "Columns",
+          "options": [
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6"
+          ],
+          "default": "3"
+        },
+        {
+          "key": "stack",
+          "type": "boolean",
+          "title": "Stack under the previous panel",
+          "default": false,
+          "description": "Shares a column with the panel before it, the way two small panels fill one column."
+        },
+        {
+          "key": "tiles",
+          "type": "list",
+          "title": "Readings",
+          "addTitle": "Add reading",
+          "maxItems": 18,
+          "row": {
+            "title": "label",
+            "subtitle": "reading"
+          },
+          "fields": [
+            {
+              "key": "reading",
+              "type": "string",
+              "title": "Reading",
+              "choices": "plugin",
+              "required": true
+            },
+            {
+              "key": "label",
+              "type": "string",
+              "title": "Label",
+              "description": "Shown under the value, such as Temperature."
+            },
+            {
+              "key": "statistic",
+              "type": "select",
+              "title": "Value",
+              "options": [
+                "Current",
+                "Minimum",
+                "Maximum",
+                "Average"
+              ],
+              "default": "Current"
+            },
+            {
+              "key": "decimals",
+              "type": "select",
+              "title": "Decimals",
+              "options": [
+                "Auto",
+                "0",
+                "1",
+                "2",
+                "3"
+              ],
+              "default": "Auto"
+            },
+            {
+              "key": "showUnit",
+              "type": "boolean",
+              "title": "Show unit",
+              "default": true
+            },
+            {
+              "key": "highlight",
+              "type": "boolean",
+              "title": "Turn red past a limit",
+              "default": false
+            },
+            {
+              "key": "alertAbove",
+              "type": "string",
+              "title": "Limit",
+              "default": "90",
+              "visibleWhen": {
+                "key": "highlight",
+                "equals": true
+              },
+              "description": "The value turns red at or above this number, such as 90."
+            }
+          ]
+        },
+        {
+          "key": "headerReading",
+          "type": "string",
+          "title": "Header reading",
+          "choices": "plugin",
+          "description": "A small reading beside the title, such as coolant flow."
+        },
+        {
+          "key": "headerLabel",
+          "type": "string",
+          "title": "Header label",
+          "visibleWhen": {
+            "key": "headerReading",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "footerText",
+          "type": "string",
+          "title": "Footer text",
+          "description": "Such as the CPU or graphics card model."
+        },
+        {
+          "key": "footerLogo",
+          "type": "select",
+          "title": "Footer logo",
+          "options": [
+            "None",
+            "Icon",
+            "AMD",
+            "Intel",
+            "NVIDIA",
+            "ASUS",
+            "ROG",
+            "MSI",
+            "Corsair",
+            "NZXT",
+            "Cooler Master",
+            "Razer",
+            "Logitech",
+            "SteelSeries",
+            "Samsung",
+            "Western Digital",
+            "Seagate",
+            "Lenovo",
+            "Dell",
+            "HP",
+            "Apple",
+            "Linux",
+            "Ubuntu",
+            "Steam",
+            "PlayStation",
+            "Epic Games"
+          ],
+          "default": "None"
+        },
+        {
+          "key": "footerIcon",
+          "type": "icon",
+          "title": "Footer icon",
+          "visibleWhen": {
+            "key": "footerLogo",
+            "equals": "Icon"
+          }
+        }
+      ]
+    },
+    {
+      "key": "accentColor",
+      "type": "color",
+      "title": "Accent color",
+      "group": "Screensaver",
+      "default": "#FFC933"
+    },
+    {
+      "key": "panelColor",
+      "type": "color",
+      "title": "Panel color",
+      "group": "Screensaver",
+      "default": "#262B34"
+    },
+    {
+      "key": "backgroundColor",
+      "type": "color",
+      "title": "Background",
+      "group": "Screensaver",
+      "default": "#000000"
+    },
+    {
+      "key": "textSize",
+      "type": "number",
+      "title": "Text size",
+      "group": "Screensaver",
+      "default": 100,
+      "min": 70,
+      "max": 150,
+      "step": 5,
+      "description": "Percent. Larger text suits a screen seen from across the room."
+    },
+    {
+      "key": "autoSwitch",
+      "type": "boolean",
+      "title": "Switch screensaver automatically",
+      "group": "Automatic screensaver",
+      "default": false,
+      "description": "Shows PC sensors in place of your screensaver while a reading stays past a limit, such as a game's frame rate. Your own screensaver setting applies the rest of the time."
+    },
+    {
+      "key": "ruleReading",
+      "type": "string",
+      "title": "Reading",
+      "group": "Automatic screensaver",
+      "default": "",
+      "choices": "plugin",
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      },
+      "description": "Framerate readings come from HWiNFO's PresentMon or RTSS sensors while a game runs."
+    },
+    {
+      "key": "ruleDirection",
+      "type": "select",
+      "title": "When it is",
+      "group": "Automatic screensaver",
+      "options": [
+        "Above",
+        "Below"
+      ],
+      "default": "Above",
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      }
+    },
+    {
+      "key": "ruleValue",
+      "type": "string",
+      "title": "Limit",
+      "group": "Automatic screensaver",
+      "default": "60",
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      },
+      "description": "A number, such as 60 for a frame rate."
+    },
+    {
+      "key": "ruleFor",
+      "type": "number",
+      "title": "For at least",
+      "group": "Automatic screensaver",
+      "default": 30,
+      "min": 0,
+      "max": 600,
+      "step": 5,
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      },
+      "description": "Seconds the reading stays past the limit before PC sensors takes over."
+    },
+    {
+      "key": "ruleRelease",
+      "type": "number",
+      "title": "Switch back after",
+      "group": "Automatic screensaver",
+      "default": 30,
+      "min": 0,
+      "max": 600,
+      "step": 5,
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      },
+      "description": "Seconds back within the limit before your own screensaver returns."
+    },
+    {
+      "key": "ruleStart",
+      "type": "boolean",
+      "title": "Start the screensaver right away",
+      "group": "Automatic screensaver",
+      "default": false,
+      "visibleWhen": {
+        "key": "autoSwitch",
+        "equals": true
+      },
+      "description": "Otherwise PC sensors shows the next time the screensaver starts."
+    }
+  ],
+  "buttons": [
+    {
+      "id": "testConnections",
+      "title": "Test connections",
+      "label": "Test",
+      "group": "Computers",
+      "description": "Connects to every computer and reports what it finds."
+    },
+    {
+      "id": "buildLayout",
+      "title": "Build a starter layout",
+      "label": "Build",
+      "group": "Screensaver",
+      "description": "Fills Panels with the CPU, graphics card, cooling and power readings of the first computer that answers.",
+      "confirm": {
+        "title": "Replace your panels?",
+        "message": "This replaces every panel with a starter layout built from your readings.",
+        "confirmLabel": "Build"
+      }
+    }
+  ],
+  "commands": [
+    {
+      "id": "showNow",
+      "title": "Show PC sensors"
+    }
+  ],
+  "groups": [
+    {
+      "title": "Computers"
+    },
+    {
+      "title": "Home Assistant"
+    },
+    {
+      "title": "Screensaver"
+    },
+    {
+      "title": "Automatic screensaver"
+    }
+  ]
+}
