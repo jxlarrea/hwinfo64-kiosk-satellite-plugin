@@ -18,6 +18,14 @@ This plugin is not affiliated with or endorsed by REALiX or HWiNFO.
 
 ## Installation
 
+### Community Plugins (Recommended)
+
+HWiNFO PC Monitor is listed in [Community Plugins](https://kiosksatellite.com/plugins/). Use the button below to open it in your Kiosk Satellite and install it.
+
+[![Install in Kiosk Satellite](https://kiosksatellite.com/img/badges/plugin-add.svg)](https://kiosksatellite.com/redirect/plugin/?repository=jxlarrea/hwinfo64-kiosk-satellite-plugin)
+
+Or search for `HWiNFO PC Monitor` in **Settings > Plugin Manager > Browse plugins** in Kiosk Satellite.
+
 ### Manual
 
 1. Open **Settings > Plugin Manager** in Kiosk Satellite and turn on **Enable Plugins**.

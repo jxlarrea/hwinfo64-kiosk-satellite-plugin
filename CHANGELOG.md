@@ -9,3 +9,4 @@
 - Pick readings from one searchable list of every PC's readings, grouped by computer and device and showing current values.
 - Add the PC sensors screensaver, drawn natively, with panels, stacked columns, footer logos, value statistics, red limits, colors and text size. Build makes a starter layout from a PC's readings.
 - Switch to PC sensors automatically while a reading stays past a limit, such as a game's frame rate, and hand the screensaver back afterward. The Show PC sensors action starts it on demand.
+- Add the Installation section with the Install in Kiosk Satellite button and the manual steps.
