@@ -2,6 +2,10 @@
 
 A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that reads the sensors of your PCs through HWiNFO's Remote Sensor Monitoring. Pick the sensors Home Assistant should get, lay them out in a native **PC sensors** screensaver and let the plugin switch to it on its own when your PC runs hot.
 
+| Light theme | Dark theme |
+| --- | --- |
+| ![The PC sensors screensaver in the light theme](docs/screensaver_light.png) | ![The PC sensors screensaver in the dark theme](docs/screensaver_dark.png) |
+
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
 - **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own sensors.
@@ -11,7 +15,7 @@ This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is 
 
 ## Requirements
 
-- Kiosk Satellite with native plugin screensavers, the `screensaver.mode` capability and plugin choices in list rows.
+- Kiosk Satellite 2026.10.35 or newer. Older versions refuse to install the plugin.
 - [HWiNFO](https://www.hwinfo.com/) on each PC, running in sensors mode with **Remote Sensor Monitoring** on. Open HWiNFO's sensor window, choose **Settings**, then **Remote Monitoring**, turn on **Enable Remote Sensor Monitoring** and keep port **27007**. HWiNFO's free version stops sharing sensors after 12 hours, so restart it or use HWiNFO Pro.
 - The PC's firewall must let the kiosk reach TCP port 27007.
 - Frame rates need HWiNFO's **PresentMon** sensor or RivaTuner Statistics Server. Their framerate sensors then show up like any other sensor.

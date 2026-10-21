@@ -253,6 +253,21 @@ public final class HwinfoPluginTest {
             waitFor(() -> host.commands.contains("clearScreensaverMode"), "the rule handing the screensaver back");
             check(Boolean.FALSE.equals(host.binary.get("rule_active")), "rule sensor off again");
 
+            // With a settings page open, the picker values follow the live reading.
+            String fpsId = "TESTPC/f0000ff0.0.8000000";
+            fps = 75;
+            plugin.onEvent("settings.page", Collections.<String, Object>singletonMap("open", true));
+            waitFor(() -> "75 FPS".equals(choice(host, fpsId).get("value")), "fresh picker values while the page is open");
+            plugin.onEvent("settings.page", Collections.<String, Object>singletonMap("open", false));
+
+            // A renamed computer heads its sensors under the new name.
+            Map<String, Object> renamed = settings(server.getLocalPort());
+            @SuppressWarnings("unchecked")
+            Map<String, Object> computer = (Map<String, Object>) ((List<?>) renamed.get("computers")).get(0);
+            computer.put("name", "Office PC");
+            plugin.configure(renamed);
+            waitFor(() -> String.valueOf(choice(host, fpsId).get("group")).startsWith("Office PC · "), "the new computer name in the pickers");
+
             Map<String, Object> run = new HashMap<>();
             run.put("id", "testConnections");
             run.put("run", "r1");
@@ -260,6 +275,12 @@ public final class HwinfoPluginTest {
             waitFor(() -> host.results.contains("r1:success"), "the connection test");
             plugin.stop();
         }
+    }
+
+    static Map<String, Object> choice(Host host, String id) {
+        List<Map<String, Object>> list = host.choices.get("ruleReading");
+        if (list != null) for (Map<String, Object> choice : list) if (id.equals(choice.get("id"))) return choice;
+        return Collections.emptyMap();
     }
 
     interface Condition {

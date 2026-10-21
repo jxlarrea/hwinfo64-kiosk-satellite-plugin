@@ -41,6 +41,8 @@ public final class HwinfoPlugin implements KioskPlugin {
     static final String MODE = "plugin:" + PLUGIN_ID + ":" + SCREENSAVER;
     static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading", "ruleReading"};
     static final int MAX_CHOICES = 2000;
+    /** How often the sensor pickers get fresh values while a settings page is open. */
+    static final long CHOICES_REFRESH_MS = 5_000;
     /** A computer that does not answer is tried again this often, so one PC that is off never slows the rest. */
     static final long RETRY_MS = 10_000;
 
@@ -81,6 +83,9 @@ public final class HwinfoPlugin implements KioskPlugin {
     private final Set<String> runs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private volatile Board board;
     private boolean choicesPublished;
+    /** A settings page shows this plugin somewhere, so the values in its sensor pickers are worth keeping fresh. */
+    private volatile boolean settingsOpen;
+    private long choicesAt;
     private boolean ruleActive;
     /** The Show PC sensors action switched to this screensaver until it is dismissed. */
     private boolean shownByAction;
@@ -139,6 +144,10 @@ public final class HwinfoPlugin implements KioskPlugin {
                 runs.add(run);
                 if ("testConnections".equals(payload.get("id"))) worker.execute(() -> testConnections(run));
                 else if ("buildLayout".equals(payload.get("id"))) worker.execute(() -> buildLayout(run));
+                break;
+            case "settings.page":
+                settingsOpen = Boolean.TRUE.equals(payload.get("open"));
+                if (settingsOpen) worker.execute(() -> choicesPublished = false);
                 break;
             case "settings.cancel":
                 runs.remove(run);
@@ -216,13 +225,16 @@ public final class HwinfoPlugin implements KioskPlugin {
     private void publish(Config current) {
         boolean catalogChanged = false;
         for (Monitor monitor : monitors.values()) {
-            String catalog = monitor.snapshot == null ? monitor.catalog : monitor.key() + monitor.snapshot.readings.size() + ":" + monitor.snapshot.devices.size();
+            // The computer's name heads its sensors in the pickers, so a rename lists them again.
+            String catalog = monitor.snapshot == null ? monitor.catalog
+                    : monitor.computer.name + "|" + monitor.key() + monitor.snapshot.readings.size() + ":" + monitor.snapshot.devices.size();
             if (!catalog.equals(monitor.catalog)) {
                 monitor.catalog = catalog;
                 catalogChanged = true;
             }
         }
-        if (catalogChanged || !choicesPublished) publishChoices();
+        long now = System.currentTimeMillis();
+        if (catalogChanged || !choicesPublished || settingsOpen && now - choicesAt >= CHOICES_REFRESH_MS) publishChoices();
         publishEntities(current);
         board = buildBoard(current);
         for (BoardView view : views) view.show(board);
@@ -275,6 +287,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         try {
             for (String field : READING_FIELDS) host.setSettingChoices(field, choices);
             choicesPublished = true;
+            choicesAt = System.currentTimeMillis();
         } catch (UnsupportedOperationException | LinkageError error) {
             choicesPublished = true;
             host.status("Update Kiosk Satellite to pick sensors from a list.", true);
