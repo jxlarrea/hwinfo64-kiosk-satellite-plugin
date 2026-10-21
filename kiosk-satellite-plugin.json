@@ -342,7 +342,18 @@
       "min": 70,
       "max": 150,
       "step": 5,
-      "description": "Percent. Larger text suits a screen seen from across the room."
+      "description": "Percent. Panel titles, sensor labels, headers and footers."
+    },
+    {
+      "key": "valueSize",
+      "type": "number",
+      "title": "Value size",
+      "group": "Screensaver",
+      "default": 100,
+      "min": 50,
+      "max": 200,
+      "step": 5,
+      "description": "Percent. The sensor values. 100 fills each tile and larger values still fit their tile."
     },
     {
       "key": "autoSwitch",

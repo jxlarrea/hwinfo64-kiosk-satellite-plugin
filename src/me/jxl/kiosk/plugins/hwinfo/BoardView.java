@@ -257,17 +257,22 @@ final class BoardView extends View {
         for (int i = 0; i < panel.tiles.size(); i++) {
             float left = box.grid.left + (i % columns) * cellWidth;
             float top = box.grid.top + (i / columns) * cellHeight;
-            drawTile(canvas, panel.tiles.get(i), values[i], left, top, cellWidth, cellHeight);
+            drawTile(canvas, current.look, panel.tiles.get(i), values[i], left, top, cellWidth, cellHeight);
         }
     }
 
-    private void drawTile(Canvas canvas, Config.Tile tile, Board.Value value, float left, float top, float width, float height) {
+    private void drawTile(Canvas canvas, Config.Look look, Config.Tile tile, Board.Value value, float left, float top, float width, float height) {
         boolean binary = value != null && Units.isBinary(value.unit);
         String number = value == null ? "–" : binary ? (value.number != 0 ? "Yes" : "No") : Units.number(value.number, value.unit, tile.decimals);
         String unit = value == null || !tile.unit || binary ? "" : value.unit;
         boolean alert = value != null && !Double.isNaN(tile.alertAbove) && value.number >= tile.alertAbove;
 
-        float size = Math.min(height * 0.42f, width * 0.25f);
+        // Text size scales the label, Value size the number. At 100 the number fills the tile the way it always has.
+        float labelSize = Math.min(height * 0.12f, width * 0.08f) * look.scale;
+        boolean hasLabel = !tile.label.isEmpty();
+        float labelRoom = hasLabel ? labelSize * 1.7f : 0;
+        // Rubik's figures stand about 0.7 of the type size. A larger value stops where it would crowd the label.
+        float size = Math.min(Math.min(height * 0.42f, width * 0.25f) * look.valueScale, (height * 0.92f - labelRoom) / 0.7f);
         float unitGap = size * 0.06f;
         text.setTypeface(theme.typeface(500));
         text.setTextSize(size);
@@ -275,7 +280,8 @@ final class BoardView extends View {
         text.setTypeface(theme.typeface(400));
         text.setTextSize(size * 0.5f);
         float unitWidth = unit.isEmpty() ? 0 : text.measureText(unit) + unitGap;
-        float room = width * 0.92f;
+        // Room on both sides keeps wide values in neighboring tiles apart.
+        float room = width * 0.86f;
         if (numberWidth + unitWidth > room) {
             float shrink = room / (numberWidth + unitWidth);
             size *= shrink;
@@ -283,11 +289,8 @@ final class BoardView extends View {
             unitWidth *= shrink;
             unitGap *= shrink;
         }
-        float labelSize = Math.min(height * 0.12f, width * 0.08f);
-        boolean hasLabel = !tile.label.isEmpty();
-        // Rubik's figures stand about 0.7 of the type size.
         float capHeight = size * 0.7f;
-        float block = capHeight + (hasLabel ? labelSize * 0.7f + labelSize : 0);
+        float block = capHeight + labelRoom;
         float baseline = top + (height - block) / 2f + capHeight;
         float x = left + (width - numberWidth - unitWidth) / 2f;
 
