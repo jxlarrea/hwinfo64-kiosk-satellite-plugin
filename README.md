@@ -1,11 +1,11 @@
 # HWiNFO Monitor for Kiosk Satellite
 
-A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that reads the sensors of your PCs through HWiNFO's Remote Sensor Monitoring. Pick the sensors Home Assistant should get, lay them out in a native **PC sensors** screensaver and let the plugin switch to it on its own while you game.
+A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that reads the sensors of your PCs through HWiNFO's Remote Sensor Monitoring. Pick the sensors Home Assistant should get, lay them out in a native **PC sensors** screensaver and let the plugin switch to it on its own when your PC runs hot.
 
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
 - **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own sensors.
-- **Automatic switching.** Show PC sensors while a sensor stays past a limit, for example while the game's frame rate stays above 60 FPS for 30 seconds. Your own screensaver setting returns once it drops again.
+- **Automatic switching.** Show PC sensors while a sensor stays past a limit, for example while the CPU temperature stays above 80°C for 30 seconds. Your own screensaver setting returns once it cools down again.
 
 This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is the official HWiNFO logo, used only to show the service it connects to.
 
@@ -14,7 +14,7 @@ This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is 
 - Kiosk Satellite with native plugin screensavers, the `screensaver.mode` capability and plugin choices in list rows.
 - [HWiNFO](https://www.hwinfo.com/) on each PC, running in sensors mode with **Remote Sensor Monitoring** on. Open HWiNFO's sensor window, choose **Settings**, then **Remote Monitoring**, turn on **Enable Remote Sensor Monitoring** and keep port **27007**. HWiNFO's free version stops sharing sensors after 12 hours, so restart it or use HWiNFO Pro.
 - The PC's firewall must let the kiosk reach TCP port 27007.
-- For frame rates, turn on HWiNFO's **PresentMon** sensor or run RivaTuner Statistics Server. Their framerate sensors show up like any other sensor.
+- Frame rates need HWiNFO's **PresentMon** sensor or RivaTuner Statistics Server. Their framerate sensors then show up like any other sensor.
 
 ## Installation
 
@@ -38,7 +38,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 2. Under **Computers**, add each PC with a name and its IP address. Press **Test** to check that they answer.
 3. Under **Home Assistant**, add the sensors Home Assistant should get. The picker lists every sensor of every PC that answered. Press its refresh button to read them again.
 4. Under **Screensaver**, press **Build** for a starter layout or add panels yourself. Then choose **PC sensors (HWiNFO Monitor)** under **Screensaver > Screensaver mode**, or let the automatic switch below pick it.
-5. Under **Automatic screensaver**, turn on **Switch screensaver automatically**, pick a sensor such as **Framerate Presented (avg)** and set the limit and times.
+5. Under **Automatic screensaver**, turn on **Switch screensaver automatically**, pick a sensor such as **CPU (Tctl/Tdie)** on AMD or **CPU Package** on Intel and set the limit and times.
 
 ## Settings
 
@@ -50,7 +50,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Screensaver | Panels | Title, icon, columns, stacking, sensors, header sensor, footer text and logo of each panel |
 | Screensaver | Custom colors, Accent color, Panel color, Background, Text color, Text size, Value size | How the screensaver looks. It follows the Kiosk Satellite theme, light or dark, until you turn on Custom colors |
 | Automatic screensaver | Switch screensaver automatically | Turns the rule on |
-| Automatic screensaver | Sensor, When it is, Limit | The condition, such as a frame rate above 60 |
+| Automatic screensaver | Sensor, When it is, Limit | The condition, such as a CPU temperature above 80 |
 | Automatic screensaver | For at least, Switch back after | Seconds the condition must hold before switching and before switching back |
 | Automatic screensaver | Start the screensaver right away | Starts it as soon as the rule switches instead of after the usual idle time |
 

@@ -8,7 +8,7 @@
 - Send picked sensors to Home Assistant with units and device classes. Yes or no sensors become binary sensors and every PC gets an online sensor.
 - Pick sensors from one searchable list of every PC's sensors, grouped by computer and device and showing current values.
 - Add the PC sensors screensaver, drawn natively, with panels, stacked columns, footer logos, value statistics, red limits, colors and text size. Build makes a starter layout from a PC's sensors.
-- Switch to PC sensors automatically while a sensor stays past a limit, such as a game's frame rate, and hand the screensaver back afterward. The Show PC sensors action starts it on demand.
+- Switch to PC sensors automatically while a sensor stays past a limit, such as the CPU temperature, and hand the screensaver back afterward. The Show PC sensors action starts it on demand.
 - Add the Installation section with the Install in Kiosk Satellite button and the manual steps.
 - Use the official HWiNFO logo as the plugin icon.
 - Rename the plugin to HWiNFO Monitor.
