@@ -1,4 +1,4 @@
-# HWiNFO PC Monitor
+# HWiNFO Monitor for Kiosk Satellite
 
 A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that reads the sensors of your PCs through HWiNFO's Remote Sensor Monitoring. Pick the readings Home Assistant should get, lay them out in a native **PC sensors** screensaver and let the plugin switch to it on its own while you game.
 
@@ -20,11 +20,11 @@ This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is 
 
 ### Community Plugins (Recommended)
 
-HWiNFO PC Monitor is listed in [Community Plugins](https://kiosksatellite.com/plugins/). Use the button below to open it in your Kiosk Satellite and install it.
+HWiNFO Monitor is listed in [Community Plugins](https://kiosksatellite.com/plugins/). Use the button below to open it in your Kiosk Satellite and install it.
 
 [![Install in Kiosk Satellite](https://kiosksatellite.com/img/badges/plugin-add.svg)](https://kiosksatellite.com/redirect/plugin/?repository=jxlarrea/hwinfo64-kiosk-satellite-plugin)
 
-Or search for `HWiNFO PC Monitor` in **Settings > Plugin Manager > Browse plugins** in Kiosk Satellite.
+Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins** in Kiosk Satellite.
 
 ### Manual
 
@@ -34,10 +34,10 @@ Or search for `HWiNFO PC Monitor` in **Settings > Plugin Manager > Browse plugin
 
 ## Setup
 
-1. Open **Plugin Manager > HWiNFO PC Monitor** and enable it.
+1. Open **Plugin Manager > HWiNFO Monitor** and enable it.
 2. Under **Computers**, add each PC with a name and its IP address. Press **Test** to check that they answer.
 3. Under **Home Assistant**, add the readings Home Assistant should get. The picker lists every reading of every PC that answered. Press its refresh button to read them again.
-4. Under **Screensaver**, press **Build** for a starter layout or add panels yourself. Then choose **PC sensors (HWiNFO PC Monitor)** under **Screensaver > Screensaver mode**, or let the automatic switch below pick it.
+4. Under **Screensaver**, press **Build** for a starter layout or add panels yourself. Then choose **PC sensors (HWiNFO Monitor)** under **Screensaver > Screensaver mode**, or let the automatic switch below pick it.
 5. Under **Automatic screensaver**, turn on **Switch screensaver automatically**, pick a reading such as **Framerate Presented (avg)** and set the limit and times.
 
 ## Settings

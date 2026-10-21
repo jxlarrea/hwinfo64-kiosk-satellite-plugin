@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "hwinfo-pc-monitor",
-  "name": "HWiNFO PC Monitor",
+  "name": "HWiNFO Monitor",
   "version": "1.0.0",
   "apiVersion": 1,
   "minAndroidSdk": 24,
@@ -94,7 +94,7 @@
       "type": "list",
       "title": "Panels",
       "group": "Screensaver",
-      "description": "Pick PC sensors (HWiNFO PC Monitor) under Screensaver > Screensaver mode to show these panels.",
+      "description": "Pick PC sensors (HWiNFO Monitor) under Screensaver > Screensaver mode to show these panels.",
       "addTitle": "Add panel",
       "maxItems": 12,
       "row": {
