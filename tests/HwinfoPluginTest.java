@@ -161,7 +161,7 @@ public final class HwinfoPluginTest {
         check(config.computers.size() == 1 && config.computers.get(0).name.equals("Gaming PC"), "computer row");
         check(config.panels.get(0).columns == 3 && config.panels.get(0).tiles.get(0).decimals == -1, "panel defaults");
         check(Double.isNaN(config.panels.get(0).tiles.get(0).alertAbove), "no limit unless highlighted");
-        check(config.look.accent == 0xFFFFC933, "accent color");
+        check(!config.look.custom && config.look.accent == 0xFFFFC933, "theme colors unless custom, with the saved accent kept");
         check(config.ruleValue == 60 && Config.decimal("1,5", 0) == 1.5 && Double.isNaN(Config.decimal("sixty", Double.NaN)), "typed limits");
         check(config.readings().contains("TESTPC/f0000ff0.0.8000000"), "rule reading counts as used");
     }

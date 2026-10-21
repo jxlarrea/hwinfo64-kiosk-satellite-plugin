@@ -282,25 +282,56 @@
       ]
     },
     {
+      "key": "customColors",
+      "type": "boolean",
+      "title": "Custom colors",
+      "group": "Screensaver",
+      "default": false,
+      "description": "Off follows the Kiosk Satellite theme, light or dark. On uses the colors below."
+    },
+    {
       "key": "accentColor",
       "type": "color",
       "title": "Accent color",
       "group": "Screensaver",
-      "default": "#FFC933"
+      "default": "#488284",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      }
     },
     {
       "key": "panelColor",
       "type": "color",
       "title": "Panel color",
       "group": "Screensaver",
-      "default": "#262B34"
+      "default": "#2A2B2F",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      }
     },
     {
       "key": "backgroundColor",
       "type": "color",
       "title": "Background",
       "group": "Screensaver",
-      "default": "#000000"
+      "default": "#202124",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      }
+    },
+    {
+      "key": "textColor",
+      "type": "color",
+      "title": "Text color",
+      "group": "Screensaver",
+      "default": "#E8EAED",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      }
     },
     {
       "key": "textSize",

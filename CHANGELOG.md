@@ -14,3 +14,4 @@
 - Rename the plugin to HWiNFO Monitor.
 - Name HWiNFO's sensors the way HWiNFO does and type the automatic screensaver and red tile limits as numbers.
 - Show the values sent to Home Assistant inside the Home Assistant group.
+- Draw the screensaver in the Kiosk Satellite look with its typeface, radii and spacing. It follows the Kiosk Satellite theme in light and dark until Custom colors is on, which adds a text color.

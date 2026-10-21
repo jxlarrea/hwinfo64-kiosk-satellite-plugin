@@ -2,7 +2,6 @@ package me.jxl.kiosk.plugins.hwinfo;
 
 import android.content.Context;
 import android.graphics.Path;
-import android.graphics.Typeface;
 import android.view.View;
 
 import org.json.JSONObject;
@@ -87,7 +86,6 @@ public final class HwinfoPlugin implements KioskPlugin {
     private boolean shownByAction;
     private long ruleSince;
     private String lastStatus = "";
-    private BoardView.Fonts fonts;
     private Map<String, Path> logos;
     private JSONObject brandPaths;
 
@@ -469,10 +467,15 @@ public final class HwinfoPlugin implements KioskPlugin {
             host.publishScreensaverView(SCREENSAVER, "PC sensors", new OverlayFactory() {
                 @Override
                 public View create(Context context, KsTheme theme) {
-                    BoardView view = new BoardView(context, theme, fonts(theme), HwinfoPlugin.this::logo);
+                    BoardView view = new BoardView(context, theme, HwinfoPlugin.this::logo);
                     views.add(view);
                     view.show(board);
                     return view;
+                }
+
+                @Override
+                public void onThemeChanged(View view, KsTheme theme) {
+                    ((BoardView) view).setTheme(theme);
                 }
 
                 @Override
@@ -482,23 +485,6 @@ public final class HwinfoPlugin implements KioskPlugin {
             });
         } catch (UnsupportedOperationException | LinkageError error) {
             host.status("Update Kiosk Satellite to show the PC sensors screensaver.", true);
-        }
-    }
-
-    /** Main thread. */
-    private BoardView.Fonts fonts(KsTheme theme) {
-        if (fonts == null) {
-            fonts = new BoardView.Fonts(font("fonts/BarlowSemiCondensed-Medium.ttf", theme, 500),
-                    font("fonts/BarlowSemiCondensed-SemiBold.ttf", theme, 600), font("fonts/BarlowSemiCondensed-Bold.ttf", theme, 700));
-        }
-        return fonts;
-    }
-
-    private Typeface font(String asset, KsTheme theme, int weight) {
-        try {
-            return Typeface.createFromFile(host.assetPath(asset));
-        } catch (RuntimeException | LinkageError error) {
-            return theme.typeface(weight);
         }
     }
 

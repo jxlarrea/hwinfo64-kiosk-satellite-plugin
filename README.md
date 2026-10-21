@@ -4,7 +4,7 @@ A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that rea
 
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
-- **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own sensors.
+- **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own sensors.
 - **Automatic switching.** Show PC sensors while a sensor stays past a limit, for example while the game's frame rate stays above 60 FPS for 30 seconds. Your own screensaver setting returns once it drops again.
 
 This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is the official HWiNFO logo, used only to show the service it connects to.
@@ -48,7 +48,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Computers | Update every | Seconds between updates, 1 to 30 |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
 | Screensaver | Panels | Title, icon, columns, stacking, sensors, header sensor, footer text and logo of each panel |
-| Screensaver | Accent color, Panel color, Background, Text size | How the screensaver looks |
+| Screensaver | Custom colors, Accent color, Panel color, Background, Text color, Text size | How the screensaver looks. It follows the Kiosk Satellite theme, light or dark, until you turn on Custom colors |
 | Automatic screensaver | Switch screensaver automatically | Turns the rule on |
 | Automatic screensaver | Sensor, When it is, Limit | The condition, such as a frame rate above 60 |
 | Automatic screensaver | For at least, Switch back after | Seconds the condition must hold before switching and before switching back |
@@ -85,4 +85,4 @@ Install the ZIP from `dist/` through **Plugin Manager > Developer Tools > Instal
 
 ## License
 
-[Apache-2.0](LICENSE). The screensaver uses the [Barlow](https://github.com/jpt/barlow) typeface under the SIL Open Font License and brand logos from [Simple Icons](https://simpleicons.org/) under CC0. See [NOTICE](NOTICE). Brand names and logos belong to their owners.
+[Apache-2.0](LICENSE). The screensaver uses brand logos from [Simple Icons](https://simpleicons.org/) under CC0. See [NOTICE](NOTICE). Brand names and logos belong to their owners.

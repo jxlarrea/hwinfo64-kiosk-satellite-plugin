@@ -81,16 +81,21 @@ final class Config {
         }
     }
 
+    /** How the screensaver looks. Without custom colors it takes the KS theme's, light or dark. */
     static final class Look {
+        final boolean custom;
         final int accent;
         final int surface;
         final int background;
+        final int text;
         final float scale;
 
-        Look(int accent, int surface, int background, float scale) {
+        Look(boolean custom, int accent, int surface, int background, int text, float scale) {
+            this.custom = custom;
             this.accent = accent;
             this.surface = surface;
             this.background = background;
+            this.text = text;
             this.scale = scale;
         }
     }
@@ -153,8 +158,9 @@ final class Config {
                     text(row.get("footerText")), text(row.get("footerLogo")), text(row.get("footerIcon")), Collections.unmodifiableList(tiles)));
         }
         this.panels = Collections.unmodifiableList(panels);
-        look = new Look(color(settings.get("accentColor"), 0xFFFFC933), color(settings.get("panelColor"), 0xFF262B34),
-                color(settings.get("backgroundColor"), 0xFF000000), (float) number(settings.get("textSize"), 100) / 100f);
+        look = new Look(Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
+                color(settings.get("panelColor"), 0xFF2A2B2F), color(settings.get("backgroundColor"), 0xFF202124),
+                color(settings.get("textColor"), 0xFFE8EAED), (float) number(settings.get("textSize"), 100) / 100f);
 
         autoSwitch = Boolean.TRUE.equals(settings.get("autoSwitch"));
         ruleReading = text(settings.get("ruleReading"));
