@@ -8,6 +8,17 @@ SVG path data from https://simpleicons.org, released under CC0 1.0 Universal.
 Brand names and logos are trademarks of their respective owners. Their use does
 not imply endorsement.
 
+Seasonic logo (assets/brands.json, "seasonic")
+The Sea Sonic "SS" mark, taken from the official logo on Seasonic's brand assets
+page (https://www.seasonic.com/brand-assets). It is a trademark of Sea Sonic
+Electronics.
+
+EK logo (assets/brands.json, "ekwb")
+The EK mark, traced as straight-edged shapes from the EKWB logo that EKWB
+released into the public domain on Wikimedia Commons
+(https://commons.wikimedia.org/wiki/File:EKWB_logo.png). It is a trademark of
+its owner.
+
 Plugin icon (assets/icon.png)
 The official HWiNFO application icon, taken from HWiNFO64.exe and filled out to
 a square so Kiosk Satellite can round its corners. It belongs to its owner and

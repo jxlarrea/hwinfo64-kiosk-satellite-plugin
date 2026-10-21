@@ -11,7 +11,7 @@ final class StarterLayout {
     /** Footer logos by the name the settings show, keyed to the paths in assets/brands.json. */
     static final String[][] LOGOS = {
         {"AMD", "amd"}, {"Intel", "intel"}, {"NVIDIA", "nvidia"}, {"ASUS", "asus"}, {"ROG", "republicofgamers"},
-        {"MSI", "msi"}, {"Corsair", "corsair"}, {"NZXT", "nzxt"}, {"Cooler Master", "coolermaster"}, {"Razer", "razer"},
+        {"MSI", "msi"}, {"Corsair", "corsair"}, {"NZXT", "nzxt"}, {"Cooler Master", "coolermaster"}, {"EK", "ekwb"}, {"Seasonic", "seasonic"}, {"Razer", "razer"},
         {"Logitech", "logitech"}, {"SteelSeries", "steelseries"}, {"Samsung", "samsung"}, {"Western Digital", "westerndigital"},
         {"Seagate", "seagate"}, {"Lenovo", "lenovo"}, {"Dell", "dell"}, {"HP", "hp"}, {"Apple", "apple"}, {"Linux", "linux"},
         {"Ubuntu", "ubuntu"}, {"Steam", "steam"}, {"PlayStation", "playstation"}, {"Epic Games", "epicgames"},

@@ -85,4 +85,4 @@ Install the ZIP from `dist/` through **Plugin Manager > Developer Tools > Instal
 
 ## License
 
-[Apache-2.0](LICENSE). The screensaver uses brand logos from [Simple Icons](https://simpleicons.org/) under CC0. See [NOTICE](NOTICE). Brand names and logos belong to their owners.
+[Apache-2.0](LICENSE). The screensaver uses brand logos from [Simple Icons](https://simpleicons.org/) under CC0, Seasonic's mark from its [brand assets](https://www.seasonic.com/brand-assets) and EK's mark traced from its public domain logo. See [NOTICE](NOTICE). Brand names and logos belong to their owners.
