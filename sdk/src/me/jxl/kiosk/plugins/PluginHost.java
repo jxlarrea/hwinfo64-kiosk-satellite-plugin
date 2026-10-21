@@ -158,7 +158,8 @@ public interface PluginHost {
      * SDK 1, setup controls. Lists the choices of a string setting or list row field declared with "choices":
      * "plugin". Each map holds id (required, 1 to 512 characters), label (up to 120, defaults to the id), group (up
      * to 120, choices with the same group show under one heading, in the order groups first appear) and detail (up
-     * to 120, a secondary line such as a current value) and icon (an MDI name such as "mdi:thermometer"). At most 2000
+     * to 120, a secondary line), value (up to 40, shown on the right the way an entity shows its state), category (up to
+     * 40, the chips above the list filter by it) and icon (an MDI name such as "mdi:thermometer"). At most 2000
      * choices. key is the setting key or the dotted
      * path of a list row field, such as "panels.tiles.sensor".
      */

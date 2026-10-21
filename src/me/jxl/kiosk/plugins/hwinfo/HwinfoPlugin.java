@@ -266,7 +266,8 @@ public final class HwinfoPlugin implements KioskPlugin {
                 choice.put("id", id(monitor, reading));
                 choice.put("label", clip(reading.label, 120));
                 choice.put("group", clip(monitor.computer.name + " · " + reading.device.name, 120));
-                choice.put("detail", clip(Units.describe(reading.value, reading.unit), 120));
+                choice.put("value", clip(Units.describe(reading.value, reading.unit), 40));
+                choice.put("category", Units.category(reading.type, reading.unit));
                 choice.put("icon", Units.icon(reading.type, reading.unit));
                 choices.add(choice);
             }
@@ -278,7 +279,7 @@ public final class HwinfoPlugin implements KioskPlugin {
             choicesPublished = true;
         } catch (UnsupportedOperationException | LinkageError error) {
             choicesPublished = true;
-            host.status("Update Kiosk Satellite to pick readings from a list.", true);
+            host.status("Update Kiosk Satellite to pick sensors from a list.", true);
         }
     }
 
@@ -298,7 +299,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         choicesPublished = false;
         publish(config);
         if (online == 0) report(run, "error", "No computer answered. " + errors());
-        else report(run, "success", "Found " + readings + " readings on " + online + (online == 1 ? " computer." : " computers."));
+        else report(run, "success", "Found " + readings + " sensors on " + online + (online == 1 ? " computer." : " computers."));
     }
 
     // Settings buttons.
@@ -318,7 +319,7 @@ public final class HwinfoPlugin implements KioskPlugin {
                 any = true;
                 knownComputers.put(monitor.key(), monitor.computer.name);
                 append(result, monitor.computer.name + ": " + monitor.snapshot.version + " on " + monitor.snapshot.host
-                        + ", " + monitor.snapshot.readings.size() + " readings.");
+                        + ", " + monitor.snapshot.readings.size() + " sensors.");
             } catch (IOException error) {
                 monitor.snapshot = null;
                 monitor.error = message(error);
@@ -388,7 +389,7 @@ public final class HwinfoPlugin implements KioskPlugin {
             (binary ? wantedBinary : wantedSensors).add(key);
             // Waits for the first reading, so the entity starts with its real name and unit.
             if (reading == null && !sensors.contains(key) && !binarySensors.contains(key)) continue;
-            String name = clip(export.name.isEmpty() ? computerName(export.reading) + " " + (reading == null ? "reading" : reading.label) : export.name, 80);
+            String name = clip(export.name.isEmpty() ? computerName(export.reading) + " " + (reading == null ? "sensor" : reading.label) : export.name, 80);
             if (binary) {
                 Boolean state = reading == null ? null : reading.value != 0;
                 if (!binarySensors.contains(key) || !equal(state, lastStates.get(key))) {
@@ -588,7 +589,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         for (Monitor monitor : monitors.values()) {
             if (monitor.snapshot != null) {
                 online++;
-                append(text, monitor.computer.name + ": " + monitor.snapshot.readings.size() + " readings from " + monitor.snapshot.version + ".");
+                append(text, monitor.computer.name + ": " + monitor.snapshot.readings.size() + " sensors from " + monitor.snapshot.version + ".");
             } else if (!monitor.error.isEmpty()) {
                 append(text, monitor.computer.name + ": " + monitor.error);
             } else {
@@ -597,7 +598,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         }
         if (monitors.isEmpty()) text.append("Add the PCs that run HWiNFO under Computers.");
         Config current = config;
-        if (current.autoSwitch && Double.isNaN(current.ruleValue)) append(text, "Type a number as the automatic screensaver's limit.");
+        if (current.autoSwitch && Double.isNaN(current.ruleValue)) append(text, "Set a limit for the automatic screensaver.");
         if (ruleActive) append(text, "Showing the PC sensors screensaver while the rule holds.");
         String status = text.toString();
         boolean error = !monitors.isEmpty() && online == 0 && status.indexOf("connecting") < 0;

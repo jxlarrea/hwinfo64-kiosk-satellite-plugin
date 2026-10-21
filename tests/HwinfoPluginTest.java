@@ -198,7 +198,7 @@ public final class HwinfoPluginTest {
         tile.put("decimals", "Auto");
         tile.put("showUnit", true);
         tile.put("highlight", false);
-        tile.put("alertAbove", "90");
+        tile.put("alertAbove", 90.0);
         Map<String, Object> panel = new LinkedHashMap<>();
         panel.put("title", "CPU");
         panel.put("icon", "mdi:cpu-64-bit");
@@ -218,7 +218,7 @@ public final class HwinfoPluginTest {
         settings.put("autoSwitch", true);
         settings.put("ruleReading", "TESTPC/f0000ff0.0.8000000");
         settings.put("ruleDirection", "Above");
-        settings.put("ruleValue", "60");
+        settings.put("ruleValue", 60.0);
         settings.put("ruleFor", 0.0);
         settings.put("ruleRelease", 0.0);
         settings.put("ruleStart", false);
@@ -240,6 +240,7 @@ public final class HwinfoPluginTest {
             Map<String, Object> first = host.choices.get("panels.tiles.reading").get(0);
             check(first.get("id").equals("TESTPC/f0000501.0.1000000") && first.get("group").equals("Gaming PC · CPU [#0]: AMD Ryzen 9 9950X3D: Enhanced"), "choice id and group");
             check("mdi:thermometer".equals(first.get("icon")), "choice icon by reading type");
+            check("Temperature".equals(first.get("category")) && "48\u00b0C".equals(first.get("value")), "choice category chip and value");
             check(host.screensaver != null, "native screensaver registered");
 
             waitFor(() -> host.commands.contains("setScreensaverMode:" + HwinfoPlugin.MODE), "the rule switching to PC sensors");

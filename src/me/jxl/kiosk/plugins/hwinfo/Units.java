@@ -55,7 +55,22 @@ final class Units {
         return "Yes/No".equalsIgnoreCase(unit);
     }
 
-    /** The Material Design Icon the reading pickers show for the reading. */
+    /** The chip that filters the sensor pickers, named after HWiNFO's sensor types. */
+    static String category(String type, String unit) {
+        if (isBinary(unit)) return "Status";
+        switch (type) {
+            case "temperature": return "Temperature";
+            case "voltage": return "Voltage";
+            case "fan": return "Fan";
+            case "current": return "Current";
+            case "power": return "Power";
+            case "clock": return "Clock";
+            case "usage": return "Usage";
+            default: return "FPS".equalsIgnoreCase(unit) ? "Frame rate" : "Other";
+        }
+    }
+
+    /** The Material Design Icon the sensor pickers show for the sensor. */
     static String icon(String type, String unit) {
         if (isBinary(unit)) return "mdi:alert-circle-outline";
         switch (type) {

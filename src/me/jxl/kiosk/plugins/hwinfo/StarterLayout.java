@@ -101,7 +101,7 @@ final class StarterLayout {
             tile.put("decimals", decimals);
             tile.put("showUnit", !"MHz".equals(reading.unit) && !"RPM".equals(reading.unit) && !"FPS".equals(reading.unit));
             tile.put("highlight", false);
-            tile.put("alertAbove", "90");
+            tile.put("alertAbove", 90);
             tiles.add(tile);
             return;
         }

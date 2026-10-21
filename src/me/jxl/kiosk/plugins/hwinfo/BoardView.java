@@ -397,7 +397,7 @@ final class BoardView extends View {
         text.setTypeface(fonts.medium);
         text.setTextSize(2.4f * u);
         text.setColor(withAlpha(TEXT, 0.7f));
-        String hint = "Add panels in the HWiNFO Monitor settings or press Build to start from your readings.";
+        String hint = "Add panels in the HWiNFO Monitor settings or press Build to start from your sensors.";
         CharSequence line = TextUtils.ellipsize(hint, text, getWidth() * 0.9f, TextUtils.TruncateAt.END);
         canvas.drawText(line, 0, line.length(), cx - text.measureText(line, 0, line.length()) / 2f, cy + 7f * u, text);
     }
