@@ -5,6 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Picture;
 import android.graphics.RectF;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -65,8 +66,25 @@ final class BoardView extends View {
     private float labelSize;
     /** Redraws the charts as they scroll. */
     private final Runnable tick = this::invalidate;
-    /** The time one pixel of the fastest chart in this frame takes to scroll by. */
-    private long chartPixel;
+    /** Everything but the chart lines, recorded once per board so a frame that only scrolls them stays cheap. */
+    private Picture still;
+    private Board stillBoard;
+    /** Whether the panel being recorded is faded, for its chart lines. */
+    private boolean fading;
+    private final List<Lines> lines = new ArrayList<>();
+
+    /** One chart's lines, drawn over the recorded screen every frame and moved left as time passes. */
+    private static final class Lines {
+        final RectF clip = new RectF();
+        final List<Path> paths = new ArrayList<>();
+        final List<Paint> pens = new ArrayList<>();
+        Path area;
+        Paint areaPaint;
+        long recorded;
+        long span;
+        float width;
+        boolean faded;
+    }
 
     /** Where one panel and its parts sit, worked out again only when the layout or the size changes. */
     private static final class Box {
@@ -79,6 +97,11 @@ final class BoardView extends View {
         int rows;
         /** The panel's part of its column's free height: its rows of readings plus its chart. */
         float share;
+        /**
+         * The widest values seen along each side of the chart since the last layout. The chart keeps that room so
+         * a new scale with wider values does not shift its lines.
+         */
+        final float[] marks = new float[2];
 
         Box(int panel) {
             this.panel = panel;
@@ -98,6 +121,7 @@ final class BoardView extends View {
     void show(Board next) {
         post(() -> {
             board = next;
+            still = null;
             if (!next.sameLayout(laidOut)) layout();
             // Nothing redraws while the window is hidden, such as with the screen off. It catches up once shown.
             if (getWindowVisibility() == VISIBLE) invalidate();
@@ -113,6 +137,7 @@ final class BoardView extends View {
     /** KS switched between light and dark. Main thread. */
     void setTheme(KsTheme next) {
         theme = next;
+        still = null;
         layout();
         invalidate();
     }
@@ -180,6 +205,7 @@ final class BoardView extends View {
     private void layout() {
         boxes.clear();
         laidOut = board;
+        still = null;
         if (board == null || getWidth() == 0 || getHeight() == 0) return;
         float u = unit();
         float gap = theme.px(theme.cardGap());
@@ -275,24 +301,47 @@ final class BoardView extends View {
     protected void onDraw(Canvas canvas) {
         Board current = board;
         if (current == null) return;
+        if (!current.sameLayout(laidOut)) layout();
+        if (still == null || stillBoard != current) record(current);
+        canvas.drawPicture(still);
+
+        // The lines move a quarter pixel at a time, every display frame for a short chart. A hidden window draws
+        // nothing, which ends the loop until it shows again.
+        long now = System.currentTimeMillis(), frame = Long.MAX_VALUE;
+        for (Lines chart : lines) {
+            int saved = chart.faded ? canvas.saveLayerAlpha(chart.clip, 128) : canvas.save();
+            canvas.clipRect(chart.clip);
+            canvas.translate(-(float) (now - chart.recorded) / chart.span * chart.width, 0);
+            if (chart.area != null) canvas.drawPath(chart.area, chart.areaPaint);
+            for (int i = 0; i < chart.paths.size(); i++) canvas.drawPath(chart.paths.get(i), chart.pens.get(i));
+            canvas.restoreToCount(saved);
+            frame = Math.min(frame, (long) (chart.span / Math.max(1, chart.width) / 4));
+        }
+        removeCallbacks(tick);
+        if (frame <= 16) postInvalidateOnAnimation();
+        else if (frame != Long.MAX_VALUE) postDelayed(tick, frame);
+    }
+
+    /** Records the screen without its chart lines, which [onDraw] adds each frame. */
+    private void record(Board current) {
+        lines.clear();
+        still = new Picture();
+        stillBoard = current;
+        Canvas canvas = still.beginRecording(getWidth(), getHeight());
         resolvePalette(current.look);
         canvas.drawColor(palette.background);
         if (current.panels.isEmpty()) {
             drawEmpty(canvas);
-            return;
+        } else {
+            for (Box box : boxes) {
+                // A computer that does not answer leaves its panels faded rather than gone.
+                fading = current.offline(box.panel);
+                int saved = fading ? canvas.saveLayerAlpha(box.bounds, 128) : canvas.save();
+                drawPanel(canvas, current, box);
+                canvas.restoreToCount(saved);
+            }
         }
-        if (!current.sameLayout(laidOut)) layout();
-        chartPixel = Long.MAX_VALUE;
-        for (Box box : boxes) {
-            // A computer that does not answer leaves its panels faded rather than gone.
-            int saved = current.offline(box.panel) ? canvas.saveLayerAlpha(box.bounds, 128) : canvas.save();
-            drawPanel(canvas, current, box);
-            canvas.restoreToCount(saved);
-        }
-        // Charts scroll a pixel at a time while they show. A hidden window draws nothing, which ends the loop
-        // until it shows again.
-        removeCallbacks(tick);
-        if (chartPixel != Long.MAX_VALUE) postDelayed(tick, Math.max(16, chartPixel));
+        still.endRecording();
     }
 
     private void drawPanel(Canvas canvas, Board current, Box box) {
@@ -304,7 +353,7 @@ final class BoardView extends View {
         drawHeader(canvas, current, box, panel, u);
         drawTiles(canvas, current, box, panel);
         Board.Chart chart = current.charts[box.panel];
-        if (chart != null && box.chart.height() > 0) drawChart(canvas, current.look, chart, box.chart, u);
+        if (chart != null && box.chart.height() > 0) drawChart(canvas, current.look, chart, box, u);
         if (box.footer > 0) drawFooter(canvas, box, panel, u);
     }
 
@@ -423,7 +472,8 @@ final class BoardView extends View {
      * A legend with each line's current value, then the lines over the chart's time span on faint guides. Lines in
      * one unit share a scale. The first unit's values run down the left side and a second unit's down the right.
      */
-    private void drawChart(Canvas canvas, Config.Look look, Board.Chart chart, RectF area, float u) {
+    private void drawChart(Canvas canvas, Config.Look look, Board.Chart chart, Box box, float u) {
+        RectF area = box.chart;
         float legend = 2.1f * u * look.chartScale;
         text.setTypeface(theme.typeface(500));
         text.setTextSize(legend);
@@ -512,8 +562,12 @@ final class BoardView extends View {
             }
         }
         float gap = mark * 1.2f;
-        plot.left += widths[0] + gap;
-        if (right) plot.right -= widths[1] + gap;
+        box.marks[0] = Math.max(box.marks[0], widths[0]);
+        plot.left += box.marks[0] + gap;
+        if (right) {
+            box.marks[1] = Math.max(box.marks[1], widths[1]);
+            plot.right -= box.marks[1] + gap;
+        }
 
         fill.setColor(palette.line);
         float hair = Math.max(1, theme.px(1));
@@ -528,11 +582,15 @@ final class BoardView extends View {
 
         float stroke = Math.max(theme.px(2), 0.3f * u);
         double total = Math.max(1, chart.span);
-        long start = System.currentTimeMillis() - chart.lag - chart.span;
-        chartPixel = Math.min(chartPixel, (long) (chart.span / Math.max(1, plot.width())));
+        Lines moving = new Lines();
+        moving.recorded = System.currentTimeMillis();
+        moving.span = Math.max(1, chart.span);
+        moving.width = plot.width();
+        moving.faded = fading;
         // Lines run off both ends as they scroll and past a fixed scale's edge.
-        canvas.save();
-        canvas.clipRect(plot.left, plot.top - stroke, plot.right, plot.bottom + stroke);
+        moving.clip.set(plot.left, plot.top - stroke, plot.right, plot.bottom + stroke);
+        lines.add(moving);
+        long start = moving.recorded - chart.lag - chart.span;
         for (int i = chart.series.size() - 1; i >= 0; i--) {
             Board.Series series = chart.series.get(i);
             double[] scale = scales[scaleOf[i]];
@@ -564,11 +622,11 @@ final class BoardView extends View {
             }
             if (area0 != null) {
                 if (drawing) closeArea(area0, lastX, firstX, plot.bottom);
-                fill.setShader(new android.graphics.LinearGradient(0, plot.top, 0, plot.bottom,
+                Paint shade = new Paint(Paint.ANTI_ALIAS_FLAG);
+                shade.setShader(new android.graphics.LinearGradient(0, plot.top, 0, plot.bottom,
                         withAlpha(seriesColor(chart, 0), 0.22f), withAlpha(seriesColor(chart, 0), 0f), android.graphics.Shader.TileMode.CLAMP));
-                fill.setColor(Color.BLACK);
-                canvas.drawPath(area0, fill);
-                fill.setShader(null);
+                moving.area = area0;
+                moving.areaPaint = shade;
             }
             Paint pen = new Paint(Paint.ANTI_ALIAS_FLAG);
             pen.setStyle(Paint.Style.STROKE);
@@ -576,9 +634,9 @@ final class BoardView extends View {
             pen.setStrokeJoin(Paint.Join.ROUND);
             pen.setStrokeCap(Paint.Cap.ROUND);
             pen.setColor(seriesColor(chart, i));
-            canvas.drawPath(line, pen);
+            moving.paths.add(line);
+            moving.pens.add(pen);
         }
-        canvas.restore();
     }
 
     /**
