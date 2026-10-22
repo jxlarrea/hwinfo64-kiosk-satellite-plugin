@@ -16,7 +16,7 @@ This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is 
 
 ## Requirements
 
-- Kiosk Satellite 2026.10.35 or newer. Older versions refuse to install the plugin.
+- Kiosk Satellite 2026.10.36 or newer. Older versions refuse to install the plugin.
 - [HWiNFO](https://www.hwinfo.com/) on each PC, running in sensors mode with **Remote Sensor Monitoring** on. Open HWiNFO's sensor window, choose **Settings**, then **Remote Monitoring**, turn on **Enable Remote Sensor Monitoring** and keep port **27007**. HWiNFO's free version stops sharing sensors after 12 hours, so restart it or use HWiNFO Pro.
 - The PC's firewall must let the kiosk reach TCP port 27007.
 - Frame rates need HWiNFO's **PresentMon** sensor or RivaTuner Statistics Server. Their framerate sensors then show up like any other sensor.
