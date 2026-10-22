@@ -463,7 +463,7 @@
       "key": "theme",
       "type": "select",
       "title": "Theme",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "options": [
         "Auto",
         "Light",
@@ -476,7 +476,7 @@
       "key": "customColors",
       "type": "boolean",
       "title": "Custom colors",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": false,
       "description": "Use your own colors below in place of the theme."
     },
@@ -484,7 +484,7 @@
       "key": "accentColor",
       "type": "color",
       "title": "Accent color",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#488284",
       "visibleWhen": {
         "key": "customColors",
@@ -495,7 +495,7 @@
       "key": "panelColor",
       "type": "color",
       "title": "Panel color",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#2A2B2F",
       "visibleWhen": {
         "key": "customColors",
@@ -506,7 +506,7 @@
       "key": "backgroundColor",
       "type": "color",
       "title": "Background",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#202124",
       "visibleWhen": {
         "key": "customColors",
@@ -517,7 +517,7 @@
       "key": "textColor",
       "type": "color",
       "title": "Text color",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#E8EAED",
       "visibleWhen": {
         "key": "customColors",
@@ -528,7 +528,7 @@
       "key": "headerColor",
       "type": "color",
       "title": "Header color",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#E8EAED",
       "visibleWhen": {
         "key": "customColors",
@@ -540,7 +540,7 @@
       "key": "labelColor",
       "type": "color",
       "title": "Label color",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": "#B6BABF",
       "visibleWhen": {
         "key": "customColors",
@@ -552,7 +552,7 @@
       "key": "textSize",
       "type": "number",
       "title": "Text size",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": 100,
       "min": 70,
       "max": 150,
@@ -563,7 +563,7 @@
       "key": "valueSize",
       "type": "number",
       "title": "Value size",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": 100,
       "min": 50,
       "max": 200,
@@ -574,7 +574,7 @@
       "key": "labelSize",
       "type": "number",
       "title": "Label size",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": 100,
       "min": 50,
       "max": 200,
@@ -585,7 +585,7 @@
       "key": "chartLabelSize",
       "type": "number",
       "title": "Chart label size",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": 100,
       "min": 50,
       "max": 200,
@@ -596,7 +596,7 @@
       "key": "chartUnits",
       "type": "boolean",
       "title": "Units on the chart scale",
-      "group": "Screensaver",
+      "group": "Screensaver appearance",
       "default": false,
       "description": "Shows the unit beside each value along the sides of the charts."
     },
@@ -737,6 +737,9 @@
     },
     {
       "title": "Screensaver"
+    },
+    {
+      "title": "Screensaver appearance"
     },
     {
       "title": "Automatic screensaver"
