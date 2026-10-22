@@ -51,6 +51,8 @@ final class BoardView extends View {
     private final List<Box> boxes = new ArrayList<>();
     private Board board;
     private Board laidOut;
+    /** One size for every value on the screen, so a small tile and a large one read alike. */
+    private float valueSize;
 
     /** Where one panel and its parts sit, worked out again only when the layout or the size changes. */
     private static final class Box {
@@ -191,6 +193,33 @@ final class BoardView extends View {
             }
             x += columnWidth + gap;
         }
+        valueSize = uniformValueSize(board.look);
+    }
+
+    /**
+     * The value size the smallest tile allows, times Value size, and never more than the size at which the
+     * tightest tile's value would crowd its label.
+     */
+    private float uniformValueSize(Config.Look look) {
+        float fill = Float.MAX_VALUE, cap = Float.MAX_VALUE;
+        for (Box box : boxes) {
+            Config.Panel panel = board.panels.get(box.panel);
+            float width = box.grid.width() / panel.columns;
+            float height = box.grid.height() / box.rows;
+            for (Config.Tile tile : panel.tiles) {
+                fill = Math.min(fill, Math.min(height * 0.42f, width * 0.25f));
+                cap = Math.min(cap, (height * 0.92f - labelRoom(look, tile, width, height)) / 0.7f);
+            }
+        }
+        return fill == Float.MAX_VALUE ? 0 : Math.max(0, Math.min(fill * VALUE * look.valueScale, cap));
+    }
+
+    private static float labelSize(Config.Look look, float width, float height) {
+        return Math.min(height * 0.12f, width * 0.08f) * LABEL * look.labelScale;
+    }
+
+    private static float labelRoom(Config.Look look, Config.Tile tile, float width, float height) {
+        return tile.label.isEmpty() ? 0 : labelSize(look, width, height) * 1.7f;
     }
 
     private static boolean hasFooter(Config.Panel panel) {
@@ -291,12 +320,11 @@ final class BoardView extends View {
         String unit = value == null || !tile.unit || binary ? "" : value.unit;
         boolean alert = value != null && !Double.isNaN(tile.alertAbove) && value.number >= tile.alertAbove;
 
-        // Label size scales the label, Value size the number. At 100 the number fills the tile the way it always has.
-        float labelSize = Math.min(height * 0.12f, width * 0.08f) * LABEL * look.labelScale;
+        float labelSize = labelSize(look, width, height);
         boolean hasLabel = !tile.label.isEmpty();
-        float labelRoom = hasLabel ? labelSize * 1.7f : 0;
-        // Rubik's figures stand about 0.7 of the type size. A larger value stops where it would crowd the label.
-        float size = Math.min(Math.min(height * 0.42f, width * 0.25f) * VALUE * look.valueScale, (height * 0.92f - labelRoom) / 0.7f);
+        float labelRoom = labelRoom(look, tile, width, height);
+        // The same size on every tile. Only a value too wide for its own tile shrinks below it.
+        float size = valueSize;
         float unitGap = size * 0.06f;
         text.setTypeface(theme.typeface(500));
         text.setTextSize(size);
@@ -313,6 +341,7 @@ final class BoardView extends View {
             unitWidth *= shrink;
             unitGap *= shrink;
         }
+        // Rubik's figures stand about 0.7 of the type size.
         float capHeight = size * 0.7f;
         float block = capHeight + labelRoom;
         float baseline = top + (height - block) / 2f + capHeight;
