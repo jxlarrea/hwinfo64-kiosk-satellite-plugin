@@ -8,7 +8,7 @@ A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that rea
 
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
-- **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. A panel can also chart up to three sensors over the last 1 to 60 minutes. **Build** makes a starter layout from your own sensors.
+- **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. A panel can also chart up to three of its sensors over the last 1 to 60 minutes, each line with its own label and color. **Build** makes a starter layout from your own sensors.
 - **Combined sensors.** Make one sensor from several: the highest core clock, the coolest drive or two UPSes added up. Use it anywhere you pick a sensor.
 - **Automatic switching.** Show PC sensors while a sensor stays past a limit, for example while the CPU temperature stays above 80°C for 30 seconds. Your own screensaver setting returns once it cools down again.
 
@@ -54,8 +54,8 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Computers | Overview tile | Shows how many PCs are online on the Remote Admin Overview |
 | Combined sensors | Combined sensors | Sensors made of several, by maximum, minimum, sum or average. Up to 16 |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
-| Screensaver | Panels | Title, icon, columns, stacking, sensors, a chart of up to three sensors, header sensor, footer text and logo of each panel |
-| Screensaver | Theme, Custom colors, Accent color, Panel color, Background, Text color, Header color, Label color, Text size, Value size, Label size | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |
+| Screensaver | Panels | Title, icon, columns, stacking, sensors, chart history, header sensor, footer text and logo of each panel. **Show as** puts each sensor in the panel as a value, a chart line or both. A panel charts its first three chart lines |
+| Screensaver | Theme, Custom colors, Accent color, Panel color, Background, Text color, Header color, Label color, Text size, Value size, Label size, Chart label size | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |
 | Automatic screensaver | Switch screensaver automatically | Turns the rule on |
 | Automatic screensaver | Sensor, When it is, Limit | The condition, such as a CPU temperature above 80 |
 | Automatic screensaver | For at least, Switch back after | Seconds the condition must hold before switching and before switching back |

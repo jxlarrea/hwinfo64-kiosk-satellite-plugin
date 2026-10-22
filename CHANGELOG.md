@@ -31,3 +31,5 @@
 - Bring the panel titles closer to the top of their panels.
 - Add Header color and Label color to Custom colors.
 - Add a chart to panels that follows up to three sensors over the last 1 to 60 minutes. It draws only while the screensaver shows.
+- Pick a panel's chart lines in its Sensors list with Show as, so each line has its own label and an optional color. The chart now marks round values along its sides and the time below, with room above its legend.
+- Add Chart label size.

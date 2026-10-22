@@ -271,7 +271,19 @@
               "key": "label",
               "type": "string",
               "title": "Label",
-              "description": "Shown under the value, such as Temperature."
+              "description": "Shown under the value and beside the chart line, such as Temperature."
+            },
+            {
+              "key": "show",
+              "type": "select",
+              "title": "Show as",
+              "options": [
+                "Value",
+                "Chart line",
+                "Value and chart line"
+              ],
+              "default": "Value",
+              "description": "A chart line follows the sensor over time in a chart under the values. A panel charts its first three."
             },
             {
               "key": "statistic",
@@ -283,7 +295,11 @@
                 "Maximum",
                 "Average"
               ],
-              "default": "Current"
+              "default": "Current",
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Chart line"
+              }
             },
             {
               "key": "decimals",
@@ -296,19 +312,31 @@
                 "2",
                 "3"
               ],
-              "default": "Auto"
+              "default": "Auto",
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Chart line"
+              }
             },
             {
               "key": "showUnit",
               "type": "boolean",
               "title": "Show unit",
-              "default": true
+              "default": true,
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Chart line"
+              }
             },
             {
               "key": "highlight",
               "type": "boolean",
               "title": "Turn red past a limit",
-              "default": false
+              "default": false,
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Chart line"
+              }
             },
             {
               "key": "alertAbove",
@@ -324,38 +352,28 @@
                 "key": "highlight",
                 "equals": true
               }
+            },
+            {
+              "key": "customLine",
+              "type": "boolean",
+              "title": "Custom line color",
+              "default": false,
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Value"
+              }
+            },
+            {
+              "key": "lineColor",
+              "type": "color",
+              "title": "Line color",
+              "default": "#E8A33D",
+              "visibleWhen": {
+                "key": "customLine",
+                "equals": true
+              }
             }
           ]
-        },
-        {
-          "key": "chartReading1",
-          "type": "string",
-          "title": "Chart",
-          "choices": "plugin",
-          "emptyText": "Add a computer under Computers to pick its sensors.",
-          "description": "A sensor to follow over time in a chart under the panel's readings. A panel without readings shows only the chart."
-        },
-        {
-          "key": "chartReading2",
-          "type": "string",
-          "title": "Second chart line",
-          "choices": "plugin",
-          "emptyText": "Add a computer under Computers to pick its sensors.",
-          "visibleWhen": {
-            "key": "chartReading1",
-            "notEmpty": true
-          }
-        },
-        {
-          "key": "chartReading3",
-          "type": "string",
-          "title": "Third chart line",
-          "choices": "plugin",
-          "emptyText": "Add a computer under Computers to pick its sensors.",
-          "visibleWhen": {
-            "key": "chartReading2",
-            "notEmpty": true
-          }
         },
         {
           "key": "chartMinutes",
@@ -369,11 +387,7 @@
             "60"
           ],
           "default": "5",
-          "description": "Minutes the chart shows.",
-          "visibleWhen": {
-            "key": "chartReading1",
-            "notEmpty": true
-          }
+          "description": "Minutes the chart shows, for sensors shown as a chart line."
         },
         {
           "key": "headerReading",
@@ -566,6 +580,17 @@
       "max": 200,
       "step": 5,
       "description": "Percent. The labels under the sensor values."
+    },
+    {
+      "key": "chartLabelSize",
+      "type": "number",
+      "title": "Chart label size",
+      "group": "Screensaver",
+      "default": 100,
+      "min": 50,
+      "max": 200,
+      "step": 5,
+      "description": "Percent. The chart's legend and the values along its sides."
     },
     {
       "key": "autoSwitch",

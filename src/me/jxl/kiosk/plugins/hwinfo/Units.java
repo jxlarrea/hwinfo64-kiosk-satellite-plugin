@@ -46,7 +46,11 @@ final class Units {
     /** The value with its unit, the way the settings pickers show it. */
     static String describe(double value, String unit) {
         if ("Yes/No".equalsIgnoreCase(unit)) return value != 0 ? "Yes" : "No";
-        String number = number(value, unit, -1);
+        return withUnit(number(value, unit, -1), unit);
+    }
+
+    /** A formatted number with its unit after it. Degrees and percent sit right against it. */
+    static String withUnit(String number, String unit) {
         return unit.isEmpty() ? number : unit.startsWith("°") || unit.equals("%") ? number + unit : number + " " + unit;
     }
 

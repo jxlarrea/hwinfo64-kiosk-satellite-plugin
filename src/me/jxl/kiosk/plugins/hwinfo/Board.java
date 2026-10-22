@@ -18,12 +18,15 @@ final class Board {
     static final class Series {
         final String name;
         final String unit;
+        /** 0 takes the line's color from the look. */
+        final int color;
         final long[] times;
         final double[] values;
 
-        Series(String name, String unit, long[] times, double[] values) {
+        Series(String name, String unit, int color, long[] times, double[] values) {
             this.name = name;
             this.unit = unit;
+            this.color = color;
             this.times = times;
             this.values = values;
         }

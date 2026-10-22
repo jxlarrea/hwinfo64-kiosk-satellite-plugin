@@ -294,7 +294,7 @@ final class BoardView extends View {
         drawHeader(canvas, current, box, panel, u);
         drawTiles(canvas, current, box, panel);
         Board.Chart chart = current.charts[box.panel];
-        if (chart != null && box.chart.height() > 0) drawChart(canvas, chart, box.chart, u);
+        if (chart != null && box.chart.height() > 0) drawChart(canvas, current.look, chart, box.chart, u);
         if (box.footer > 0) drawFooter(canvas, box, panel, u);
     }
 
@@ -409,15 +409,17 @@ final class BoardView extends View {
         }
     }
 
-    /** A legend with each line's current value, then the lines over the chart's time span on faint guides. */
-    private void drawChart(Canvas canvas, Board.Chart chart, RectF area, float u) {
-        float legend = 2.1f * u;
+    /**
+     * A legend with each line's current value, then the lines over the chart's time span on faint guides. Lines in
+     * one unit share a scale. The first unit's values run down the left side and a second unit's down the right.
+     */
+    private void drawChart(Canvas canvas, Config.Look look, Board.Chart chart, RectF area, float u) {
+        float legend = 2.1f * u * look.chartScale;
         text.setTypeface(theme.typeface(500));
         text.setTextSize(legend);
-        float x = area.left, baseline = area.top + legend;
+        float x = area.left, baseline = area.top + legend * 1.8f;
         for (int i = 0; i < chart.series.size(); i++) {
             Board.Series series = chart.series.get(i);
-            int color = seriesColor(i);
             double latest = series.latest();
             String value = Double.isNaN(latest) ? "–" : Units.describe(latest, series.unit);
             // An entry that does not fit the rest of the row starts the next one.
@@ -426,7 +428,7 @@ final class BoardView extends View {
                 x = area.left;
                 baseline += legend * 1.4f;
             }
-            fill.setColor(color);
+            fill.setColor(seriesColor(chart, i));
             canvas.drawCircle(x + legend * 0.35f, baseline - legend * 0.35f, legend * 0.3f, fill);
             x += legend;
             text.setColor(palette.label);
@@ -437,51 +439,80 @@ final class BoardView extends View {
             x += text.measureText(value) + legend * 1.2f;
         }
 
-        RectF plot = new RectF(area.left, baseline + legend * 0.9f, area.right, area.bottom - legend * 0.3f);
-        if (plot.height() <= legend) return;
-        // Lines in one unit share a scale with its values marked. Lines in different units each fill the height on
-        // their own scale, since no single axis reads true for all of them.
-        String unit = chart.series.get(0).unit;
-        boolean shared = true;
-        for (Board.Series series : chart.series) shared &= series.unit.equals(unit);
-        double[] lows = new double[chart.series.size()], highs = new double[chart.series.size()];
-        boolean any = false;
+        float mark = legend * 0.85f;
+        RectF plot = new RectF(area.left, baseline + legend * 1.2f, area.right, area.bottom - mark * 1.6f);
+        if (plot.height() <= legend * 2) return;
+
+        // One scale per unit, in the order the lines first use them.
+        List<String> units = new ArrayList<>();
+        int[] scaleOf = new int[chart.series.size()];
+        for (int i = 0; i < chart.series.size(); i++) {
+            String unit = chart.series.get(i).unit;
+            if (!units.contains(unit)) units.add(unit);
+            scaleOf[i] = units.indexOf(unit);
+        }
+        double[] lows = new double[units.size()], highs = new double[units.size()];
+        java.util.Arrays.fill(lows, Double.POSITIVE_INFINITY);
+        java.util.Arrays.fill(highs, Double.NEGATIVE_INFINITY);
         for (int i = 0; i < chart.series.size(); i++) {
             double[] range = range(chart.series.get(i).values);
-            lows[i] = range[0];
-            highs[i] = range[1];
-            any |= !Double.isNaN(range[0]);
+            if (Double.isNaN(range[0])) continue;
+            lows[scaleOf[i]] = Math.min(lows[scaleOf[i]], range[0]);
+            highs[scaleOf[i]] = Math.max(highs[scaleOf[i]], range[1]);
         }
-        if (!any) return;
-        if (shared) {
-            double low = Double.POSITIVE_INFINITY, high = Double.NEGATIVE_INFINITY;
-            for (int i = 0; i < lows.length; i++) {
-                if (Double.isNaN(lows[i])) continue;
-                low = Math.min(low, lows[i]);
-                high = Math.max(high, highs[i]);
+        if (lows[0] == Double.POSITIVE_INFINITY) return;
+
+        // Round steps for the first scale, with as many as fit. A second scale takes the same count so both
+        // sides mark the same guides.
+        int steps = Math.max(2, Math.min(4, (int) (plot.height() / (mark * 2.6f))));
+        double[][] scales = new double[units.size()][];
+        scales[0] = scale(lows[0], highs[0], steps, 0);
+        steps = (int) Math.round((scales[0][1] - scales[0][0]) / scales[0][2]);
+        for (int k = 1; k < units.size(); k++) {
+            if (lows[k] != Double.POSITIVE_INFINITY) scales[k] = scale(lows[k], highs[k], steps, steps);
+        }
+
+        // The side marks, colored like their lines when the sides differ.
+        text.setTypeface(theme.typeface(400));
+        text.setTextSize(mark);
+        boolean right = units.size() > 1 && scales[1] != null;
+        String[][] marks = new String[right ? 2 : 1][steps + 1];
+        float[] widths = new float[marks.length];
+        for (int side = 0; side < marks.length; side++) {
+            double[] scale = scales[side];
+            int places = places(scale[2]);
+            for (int t = 0; t <= steps; t++) {
+                marks[side][t] = Units.withUnit(Units.number(scale[0] + t * scale[2], units.get(side), places), units.get(side));
+                widths[side] = Math.max(widths[side], text.measureText(marks[side][t]));
             }
-            java.util.Arrays.fill(lows, low);
-            java.util.Arrays.fill(highs, high);
         }
+        plot.left += widths[0] + mark * 0.6f;
+        if (right) plot.right -= widths[1] + mark * 0.6f;
 
         fill.setColor(palette.line);
         float hair = Math.max(1, theme.px(1));
-        text.setTextSize(legend * 0.85f);
-        text.setColor(palette.muted);
-        for (int i = 0; i < 3; i++) {
-            float y = plot.top + plot.height() * i / 2f;
+        for (int t = 0; t <= steps; t++) {
+            float y = plot.bottom - plot.height() * t / steps;
             canvas.drawRect(plot.left, y, plot.right, y + hair, fill);
-            if (i == 1 || !shared) continue;
-            String mark = Units.describe(i == 0 ? highs[0] : lows[0], unit);
-            canvas.drawText(mark, plot.right - text.measureText(mark), i == 0 ? y + legend * 0.95f : y - legend * 0.3f, text);
+            float middle = y + mark * 0.35f;
+            text.setColor(right ? seriesColor(chart, 0) : palette.muted);
+            canvas.drawText(marks[0][t], plot.left - mark * 0.6f - text.measureText(marks[0][t]), middle, text);
+            if (!right) continue;
+            text.setColor(seriesColor(chart, firstOf(scaleOf, 1)));
+            canvas.drawText(marks[1][t], plot.right + mark * 0.6f, middle, text);
         }
+        text.setColor(palette.muted);
+        String since = Units.withUnit(Integer.toString((int) Math.round((chart.end - chart.start) / 60_000.0)), "min") + " ago";
+        canvas.drawText(since, plot.left, plot.bottom + mark * 1.4f, text);
+        canvas.drawText("Now", plot.right - text.measureText("Now"), plot.bottom + mark * 1.4f, text);
 
         float stroke = Math.max(theme.px(2), 0.3f * u);
         double total = Math.max(1, chart.end - chart.start);
         for (int i = chart.series.size() - 1; i >= 0; i--) {
             Board.Series series = chart.series.get(i);
-            if (Double.isNaN(lows[i])) continue;
-            double low = lows[i], high = highs[i];
+            double[] scale = scales[scaleOf[i]];
+            if (scale == null) continue;
+            double low = scale[0], high = scale[1];
             Path line = new Path();
             Path area0 = i == 0 ? new Path() : null;
             boolean drawing = false;
@@ -509,7 +540,7 @@ final class BoardView extends View {
             if (area0 != null) {
                 if (drawing) closeArea(area0, lastX, firstX, plot.bottom);
                 fill.setShader(new android.graphics.LinearGradient(0, plot.top, 0, plot.bottom,
-                        withAlpha(seriesColor(0), 0.22f), withAlpha(seriesColor(0), 0f), android.graphics.Shader.TileMode.CLAMP));
+                        withAlpha(seriesColor(chart, 0), 0.22f), withAlpha(seriesColor(chart, 0), 0f), android.graphics.Shader.TileMode.CLAMP));
                 fill.setColor(Color.BLACK);
                 canvas.drawPath(area0, fill);
                 fill.setShader(null);
@@ -519,9 +550,44 @@ final class BoardView extends View {
             pen.setStrokeWidth(stroke);
             pen.setStrokeJoin(Paint.Join.ROUND);
             pen.setStrokeCap(Paint.Cap.ROUND);
-            pen.setColor(seriesColor(i));
+            pen.setColor(seriesColor(chart, i));
             canvas.drawPath(line, pen);
         }
+    }
+
+    /**
+     * The bottom, top and step of a scale in round steps that reaches from low to high in about [steps] steps, or
+     * in exactly [exact] steps unless it is 0.
+     */
+    static double[] scale(double low, double high, int steps, int exact) {
+        double step = round((high - low) / steps);
+        for (int tries = 0; tries < 8; tries++) {
+            double first = Math.floor(low / step + 1e-9) * step;
+            int count = exact > 0 ? exact : (int) Math.max(1, Math.ceil((high - first) / step - 1e-9));
+            if (first + count * step >= high - 1e-9) return new double[] {first, first + count * step, step};
+            step = round(step * 1.01);
+        }
+        return new double[] {low, high, (high - low) / Math.max(1, exact > 0 ? exact : steps)};
+    }
+
+    /** The next step at or above [raw] from 1, 2, 2.5 and 5 times a power of ten. */
+    private static double round(double raw) {
+        double power = Math.pow(10, Math.floor(Math.log10(raw)));
+        double fraction = raw / power;
+        double nice = fraction <= 1 ? 1 : fraction <= 2 ? 2 : fraction <= 2.5 ? 2.5 : fraction <= 5 ? 5 : 10;
+        return nice * power;
+    }
+
+    /** The decimals a step needs, so 2.5 shows one and 50 none. */
+    static int places(double step) {
+        int places = 0;
+        while (places < 4 && Math.abs(step * Math.pow(10, places) - Math.rint(step * Math.pow(10, places))) > 1e-6) places++;
+        return places;
+    }
+
+    private static int firstOf(int[] scaleOf, int scale) {
+        for (int i = 0; i < scaleOf.length; i++) if (scaleOf[i] == scale) return i;
+        return 0;
     }
 
     /** The lowest and highest value with a little room around them, or NaN for a line without values. */
@@ -545,7 +611,10 @@ final class BoardView extends View {
         area.close();
     }
 
-    private int seriesColor(int index) {
+    /** The line's own color, else the accent for the first line and the chart colors after it. */
+    private int seriesColor(Board.Chart chart, int index) {
+        int own = chart.series.get(index).color;
+        if (own != 0) return own;
         return index == 0 ? palette.accent : SERIES[(index - 1) % SERIES.length];
     }
 

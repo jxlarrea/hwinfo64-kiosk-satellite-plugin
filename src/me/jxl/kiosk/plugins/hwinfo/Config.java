@@ -83,6 +83,20 @@ final class Config {
         }
     }
 
+    /** One line of a panel's chart. */
+    static final class Line {
+        final String reading;
+        final String label;
+        /** 0 takes the line's color from the look. */
+        final int color;
+
+        Line(String reading, String label, int color) {
+            this.reading = reading;
+            this.label = label;
+            this.color = color;
+        }
+    }
+
     static final class Panel {
         final String title;
         final String icon;
@@ -93,13 +107,14 @@ final class Config {
         final String footerText;
         final String footerLogo;
         final String footerIcon;
+        /** The sensors shown as values. */
         final List<Tile> tiles;
-        /** Up to three sensors the panel's chart follows, empty without a chart. */
-        final List<String> chart;
+        /** Up to three sensors shown as chart lines, empty without a chart. */
+        final List<Line> chart;
         final int chartMinutes;
 
         Panel(String title, String icon, int columns, boolean stack, String headerReading, String headerLabel,
-                String footerText, String footerLogo, String footerIcon, List<Tile> tiles, List<String> chart, int chartMinutes) {
+                String footerText, String footerLogo, String footerIcon, List<Tile> tiles, List<Line> chart, int chartMinutes) {
             this.title = title;
             this.icon = icon;
             this.columns = columns;
@@ -132,8 +147,11 @@ final class Config {
         final float valueScale;
         /** The labels under the sensor values. */
         final float labelScale;
+        /** The chart legends and the values along the charts. */
+        final float chartScale;
 
-        Look(String theme, boolean custom, int accent, int surface, int background, int text, int header, int label, float scale, float valueScale, float labelScale) {
+        Look(String theme, boolean custom, int accent, int surface, int background, int text, int header, int label, float scale, float valueScale, float labelScale,
+                float chartScale) {
             this.theme = theme;
             this.custom = custom;
             this.accent = accent;
@@ -145,6 +163,7 @@ final class Config {
             this.scale = scale;
             this.valueScale = valueScale;
             this.labelScale = labelScale;
+            this.chartScale = chartScale;
         }
     }
 
@@ -213,25 +232,33 @@ final class Config {
         List<Panel> panels = new ArrayList<>();
         for (Map<String, Object> row : rows(settings.get("panels"))) {
             List<Tile> tiles = new ArrayList<>();
+            List<Line> chart = new ArrayList<>();
             for (Map<String, Object> tile : rows(row.get("tiles"))) {
                 String reading = text(tile.get("reading"));
                 if (reading.isEmpty()) continue;
-                boolean highlight = Boolean.TRUE.equals(tile.get("highlight"));
-                tiles.add(new Tile(reading, text(tile.get("label")), statistic(text(tile.get("statistic"))),
-                        decimals(text(tile.get("decimals"))), !Boolean.FALSE.equals(tile.get("showUnit")),
-                        highlight ? decimal(tile.get("alertAbove"), Double.NaN) : Double.NaN));
+                String show = text(tile.get("show"));
+                if (!"Chart line".equals(show)) {
+                    boolean highlight = Boolean.TRUE.equals(tile.get("highlight"));
+                    tiles.add(new Tile(reading, text(tile.get("label")), statistic(text(tile.get("statistic"))),
+                            decimals(text(tile.get("decimals"))), !Boolean.FALSE.equals(tile.get("showUnit")),
+                            highlight ? decimal(tile.get("alertAbove"), Double.NaN) : Double.NaN));
+                }
+                if ((show.equals("Chart line") || show.equals("Value and chart line")) && chart.size() < 3) {
+                    chart.add(new Line(reading, text(tile.get("label")), Boolean.TRUE.equals(tile.get("customLine")) ? color(tile.get("lineColor"), 0) : 0));
+                }
             }
             panels.add(new Panel(text(row.get("title")), text(row.get("icon")), clamp((int) number(parseOr(text(row.get("columns")), 3), 3), 1, 6),
                     Boolean.TRUE.equals(row.get("stack")), text(row.get("headerReading")), text(row.get("headerLabel")),
                     text(row.get("footerText")), text(row.get("footerLogo")), text(row.get("footerIcon")), Collections.unmodifiableList(tiles),
-                    Collections.unmodifiableList(chart(row)), clamp((int) number(parseOr(text(row.get("chartMinutes")), 5), 5), 1, 60)));
+                    Collections.unmodifiableList(chart), clamp((int) number(parseOr(text(row.get("chartMinutes")), 5), 5), 1, 60)));
         }
         this.panels = Collections.unmodifiableList(panels);
         look = new Look(text(settings.get("theme")).isEmpty() ? "Auto" : text(settings.get("theme")), Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
                 color(settings.get("panelColor"), 0xFF2A2B2F), color(settings.get("backgroundColor"), 0xFF202124),
                 color(settings.get("textColor"), 0xFFE8EAED), color(settings.get("headerColor"), 0xFFE8EAED),
                 color(settings.get("labelColor"), 0xFFB6BABF), (float) number(settings.get("textSize"), 100) / 100f,
-                (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f);
+                (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f,
+                (float) number(settings.get("chartLabelSize"), 100) / 100f);
 
         autoSwitch = Boolean.TRUE.equals(settings.get("autoSwitch"));
         ruleReading = text(settings.get("ruleReading"));
@@ -252,22 +279,11 @@ final class Config {
         for (Export export : exports) all.add(export.reading);
         for (Panel panel : panels) {
             if (!panel.headerReading.isEmpty()) all.add(panel.headerReading);
-            all.addAll(panel.chart);
+            for (Line line : panel.chart) all.add(line.reading);
             for (Tile tile : panel.tiles) all.add(tile.reading);
         }
         if (autoSwitch && !ruleReading.isEmpty()) all.add(ruleReading);
         return all;
-    }
-
-    /** The chart's sensors in order. A line only counts while the ones before it are set, the way the settings show them. */
-    private static List<String> chart(Map<String, Object> row) {
-        List<String> chart = new ArrayList<>();
-        for (String key : new String[] {"chartReading1", "chartReading2", "chartReading3"}) {
-            String reading = text(row.get(key));
-            if (reading.isEmpty()) break;
-            chart.add(reading);
-        }
-        return chart;
     }
 
     @SuppressWarnings("unchecked")

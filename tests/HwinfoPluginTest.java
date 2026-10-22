@@ -172,12 +172,18 @@ public final class HwinfoPluginTest {
         check(!config.look.custom && config.look.accent == 0xFFFFC933, "theme colors unless custom, with the saved accent kept");
         check(config.ruleValue == 60 && Config.decimal("1,5", 0) == 1.5 && Double.isNaN(Config.decimal("sixty", Double.NaN)), "typed limits");
         check(config.panels.get(0).chart.size() == 2 && config.panels.get(0).chartMinutes == 1, "chart lines and history");
-        Map<String, Object> gap = new LinkedHashMap<>(((List<Map<String, Object>>) settings.get("panels")).get(0));
-        gap.put("chartReading2", "");
-        gap.put("chartReading3", "TESTPC/f0000501.0.6000000");
-        Map<String, Object> gapped = new HashMap<>(settings);
-        gapped.put("panels", Collections.singletonList(gap));
-        check(Config.of(gapped).panels.get(0).chart.size() == 1, "a third line needs a second one");
+        check(config.panels.get(0).tiles.size() == 1, "a chart line alone is no value");
+        check(config.panels.get(0).chart.get(0).color == 0 && config.panels.get(0).chart.get(1).color == 0xFF00FF00, "line colors");
+        Map<String, Object> many = new LinkedHashMap<>(((List<Map<String, Object>>) settings.get("panels")).get(0));
+        List<Object> lines = new ArrayList<>((List<Object>) many.get("tiles"));
+        lines.addAll((List<Object>) many.get("tiles"));
+        many.put("tiles", lines);
+        Map<String, Object> crowded = new HashMap<>(settings);
+        crowded.put("panels", Collections.singletonList(many));
+        check(Config.of(crowded).panels.get(0).chart.size() == 3, "three lines at most");
+        check(Arrays.equals(BoardView.scale(38.2, 52.7, 4, 0), new double[] {35, 55, 5}), "a scale in round steps");
+        check(Arrays.equals(BoardView.scale(4000, 5200, 4, 4), new double[] {4000, 6000, 500}), "a scale with a set count of steps");
+        check(BoardView.places(2.5) == 1 && BoardView.places(50) == 0, "decimals of a step");
         check(config.readings().contains("TESTPC/f0000ff0.0.8000000"), "rule reading counts as used");
     }
 
@@ -259,15 +265,19 @@ public final class HwinfoPluginTest {
         tile.put("showUnit", true);
         tile.put("highlight", false);
         tile.put("alertAbove", 90.0);
+        tile.put("show", "Value and chart line");
+        Map<String, Object> clock = new LinkedHashMap<>();
+        clock.put("reading", "combined/Max clock");
+        clock.put("label", "");
+        clock.put("show", "Chart line");
+        clock.put("customLine", true);
+        clock.put("lineColor", "#00FF00");
         Map<String, Object> panel = new LinkedHashMap<>();
         panel.put("title", "CPU");
         panel.put("icon", "mdi:cpu-64-bit");
         panel.put("columns", "3");
         panel.put("stack", false);
-        panel.put("tiles", Collections.singletonList(tile));
-        panel.put("chartReading1", "TESTPC/f0000501.0.1000000");
-        panel.put("chartReading2", "combined/Max clock");
-        panel.put("chartReading3", "");
+        panel.put("tiles", Arrays.asList(tile, clock));
         panel.put("chartMinutes", "1");
         panel.put("headerReading", "");
         panel.put("headerLabel", "");
@@ -332,8 +342,8 @@ public final class HwinfoPluginTest {
             waitFor(() -> plugin.freshBoard().charts[0].series.get(0).values.length >= 3, "three chart samples");
             Board.Chart chart = plugin.freshBoard().charts[0];
             check(chart.series.size() == 2 && chart.end - chart.start == 60_000, "two lines over one minute");
-            check(chart.series.get(0).latest() == 47.625 && "CPU (Tctl/Tdie)".equals(chart.series.get(0).name), "the temperature line");
-            check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name), "the combined line");
+            check(chart.series.get(0).latest() == 47.625 && "Temperature".equals(chart.series.get(0).name), "the temperature line with its label");
+            check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name) && chart.series.get(1).color == 0xFF00FF00, "the combined line in its color");
             check(chart.series.get(0).times[0] >= chart.start, "only samples inside the span");
 
             // The Overview tile goes away with its setting and comes back.

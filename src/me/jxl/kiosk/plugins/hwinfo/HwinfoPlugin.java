@@ -41,8 +41,7 @@ public final class HwinfoPlugin implements KioskPlugin {
     static final String SCREENSAVER = "board";
     static final String MODE = "plugin:" + PLUGIN_ID + ":" + SCREENSAVER;
     /** Fields that take any sensor, combined ones included. */
-    static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading",
-        "panels.chartReading1", "panels.chartReading2", "panels.chartReading3", "ruleReading"};
+    static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading", "ruleReading"};
     /** The sensors a combined sensor is made of, which cannot be combined ones themselves. */
     static final String PART_FIELD = "combined.sensors.reading";
     static final String COMPUTER_FIELD = "combined.computer";
@@ -688,7 +687,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         long now = System.currentTimeMillis();
         Map<String, Integer> minutes = new HashMap<>();
         for (Config.Panel panel : current.panels) {
-            for (String id : panel.chart) minutes.merge(id, panel.chartMinutes, Math::max);
+            for (Config.Line line : panel.chart) minutes.merge(line.reading, panel.chartMinutes, Math::max);
         }
         history.keySet().retainAll(minutes.keySet());
         chartNames.keySet().retainAll(minutes.keySet());
@@ -705,7 +704,8 @@ public final class HwinfoPlugin implements KioskPlugin {
     private Board.Chart chart(Config.Panel panel) {
         long end = System.currentTimeMillis(), start = end - panel.chartMinutes * 60_000L;
         List<Board.Series> series = new ArrayList<>();
-        for (String id : panel.chart) {
+        for (Config.Line line : panel.chart) {
+            String id = line.reading;
             List<double[]> kept = new ArrayList<>();
             for (double[] sample : history.getOrDefault(id, new java.util.ArrayDeque<double[]>())) {
                 if (sample[0] >= start) kept.add(sample);
@@ -717,7 +717,7 @@ public final class HwinfoPlugin implements KioskPlugin {
                 values[i] = kept.get(i)[1];
             }
             String[] name = chartNames.getOrDefault(id, new String[] {id.startsWith(Config.Combined.PREFIX) ? id.substring(Config.Combined.PREFIX.length()) : "Sensor", ""});
-            series.add(new Board.Series(name[0], name[1], times, values));
+            series.add(new Board.Series(line.label.isEmpty() ? name[0] : line.label, name[1], line.color, times, values));
         }
         return new Board.Chart(series, start, end);
     }
