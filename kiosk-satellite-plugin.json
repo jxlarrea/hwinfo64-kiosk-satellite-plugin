@@ -593,6 +593,14 @@
       "description": "Percent. The chart's legend and the values along its sides."
     },
     {
+      "key": "chartUnits",
+      "type": "boolean",
+      "title": "Units on the chart scale",
+      "group": "Screensaver",
+      "default": false,
+      "description": "Shows the unit beside each value along the sides of the charts."
+    },
+    {
       "key": "autoSwitch",
       "type": "boolean",
       "title": "Switch screensaver automatically",

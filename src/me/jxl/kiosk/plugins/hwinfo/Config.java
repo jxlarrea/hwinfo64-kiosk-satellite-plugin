@@ -149,9 +149,11 @@ final class Config {
         final float labelScale;
         /** The chart legends and the values along the charts. */
         final float chartScale;
+        /** Whether the values along the charts show their unit. */
+        final boolean chartUnits;
 
         Look(String theme, boolean custom, int accent, int surface, int background, int text, int header, int label, float scale, float valueScale, float labelScale,
-                float chartScale) {
+                float chartScale, boolean chartUnits) {
             this.theme = theme;
             this.custom = custom;
             this.accent = accent;
@@ -164,6 +166,7 @@ final class Config {
             this.valueScale = valueScale;
             this.labelScale = labelScale;
             this.chartScale = chartScale;
+            this.chartUnits = chartUnits;
         }
     }
 
@@ -258,7 +261,7 @@ final class Config {
                 color(settings.get("textColor"), 0xFFE8EAED), color(settings.get("headerColor"), 0xFFE8EAED),
                 color(settings.get("labelColor"), 0xFFB6BABF), (float) number(settings.get("textSize"), 100) / 100f,
                 (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f,
-                (float) number(settings.get("chartLabelSize"), 100) / 100f);
+                (float) number(settings.get("chartLabelSize"), 100) / 100f, Boolean.TRUE.equals(settings.get("chartUnits")));
 
         autoSwitch = Boolean.TRUE.equals(settings.get("autoSwitch"));
         ruleReading = text(settings.get("ruleReading"));

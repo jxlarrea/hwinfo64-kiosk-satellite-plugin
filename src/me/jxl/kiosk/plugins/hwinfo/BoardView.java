@@ -440,7 +440,7 @@ final class BoardView extends View {
         }
 
         float mark = legend * 0.85f;
-        RectF plot = new RectF(area.left, baseline + legend * 1.2f, area.right, area.bottom - mark * 1.6f);
+        RectF plot = new RectF(area.left, baseline + legend * 2f, area.right, area.bottom - mark * 1.4f);
         if (plot.height() <= legend * 2) return;
 
         // One scale per unit, in the order the lines first use them.
@@ -472,7 +472,7 @@ final class BoardView extends View {
             if (lows[k] != Double.POSITIVE_INFINITY) scales[k] = scale(lows[k], highs[k], steps, steps);
         }
 
-        // The side marks, colored like their lines when the sides differ.
+        // The values along the sides.
         text.setTypeface(theme.typeface(400));
         text.setTextSize(mark);
         boolean right = units.size() > 1 && scales[1] != null;
@@ -482,12 +482,14 @@ final class BoardView extends View {
             double[] scale = scales[side];
             int places = places(scale[2]);
             for (int t = 0; t <= steps; t++) {
-                marks[side][t] = Units.withUnit(Units.number(scale[0] + t * scale[2], units.get(side), places), units.get(side));
+                String number = Units.number(scale[0] + t * scale[2], units.get(side), places);
+                marks[side][t] = look.chartUnits ? Units.withUnit(number, units.get(side)) : number;
                 widths[side] = Math.max(widths[side], text.measureText(marks[side][t]));
             }
         }
-        plot.left += widths[0] + mark * 0.6f;
-        if (right) plot.right -= widths[1] + mark * 0.6f;
+        float gap = mark * 1.2f;
+        plot.left += widths[0] + gap;
+        if (right) plot.right -= widths[1] + gap;
 
         fill.setColor(palette.line);
         float hair = Math.max(1, theme.px(1));
@@ -495,16 +497,10 @@ final class BoardView extends View {
             float y = plot.bottom - plot.height() * t / steps;
             canvas.drawRect(plot.left, y, plot.right, y + hair, fill);
             float middle = y + mark * 0.35f;
-            text.setColor(right ? seriesColor(chart, 0) : palette.muted);
-            canvas.drawText(marks[0][t], plot.left - mark * 0.6f - text.measureText(marks[0][t]), middle, text);
-            if (!right) continue;
-            text.setColor(seriesColor(chart, firstOf(scaleOf, 1)));
-            canvas.drawText(marks[1][t], plot.right + mark * 0.6f, middle, text);
+            text.setColor(palette.muted);
+            canvas.drawText(marks[0][t], plot.left - gap - text.measureText(marks[0][t]), middle, text);
+            if (right) canvas.drawText(marks[1][t], plot.right + gap, middle, text);
         }
-        text.setColor(palette.muted);
-        String since = Units.withUnit(Integer.toString((int) Math.round((chart.end - chart.start) / 60_000.0)), "min") + " ago";
-        canvas.drawText(since, plot.left, plot.bottom + mark * 1.4f, text);
-        canvas.drawText("Now", plot.right - text.measureText("Now"), plot.bottom + mark * 1.4f, text);
 
         float stroke = Math.max(theme.px(2), 0.3f * u);
         double total = Math.max(1, chart.end - chart.start);
@@ -583,11 +579,6 @@ final class BoardView extends View {
         int places = 0;
         while (places < 4 && Math.abs(step * Math.pow(10, places) - Math.rint(step * Math.pow(10, places))) > 1e-6) places++;
         return places;
-    }
-
-    private static int firstOf(int[] scaleOf, int scale) {
-        for (int i = 0; i < scaleOf.length; i++) if (scaleOf[i] == scale) return i;
-        return 0;
     }
 
     /** The lowest and highest value with a little room around them, or NaN for a line without values. */
