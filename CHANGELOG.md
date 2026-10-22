@@ -24,3 +24,4 @@
 - Add Overview tile to show or hide the PCs online tile on the Remote Admin Overview.
 - Open the README screenshots at full size when clicked.
 - Add combined sensors, made of several sensors by maximum, minimum, sum or average and picked like any other sensor.
+- Tell people to add a computer first when a sensor picker has nothing to list yet.

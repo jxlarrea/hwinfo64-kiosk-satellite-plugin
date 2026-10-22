@@ -131,7 +131,8 @@
               "type": "string",
               "title": "Sensor",
               "choices": "plugin",
-              "required": true
+              "required": true,
+              "emptyText": "Add a computer under Computers to pick its sensors."
             }
           ]
         },
@@ -144,7 +145,8 @@
           "visibleWhen": {
             "key": "source",
             "equals": "Match a name"
-          }
+          },
+          "emptyText": "Add a computer under Computers first."
         },
         {
           "key": "pattern",
@@ -188,7 +190,8 @@
           "type": "string",
           "title": "Sensor",
           "choices": "plugin",
-          "required": true
+          "required": true,
+          "emptyText": "Add a computer under Computers to pick its sensors."
         },
         {
           "key": "name",
@@ -261,7 +264,8 @@
               "type": "string",
               "title": "Sensor",
               "choices": "plugin",
-              "required": true
+              "required": true,
+              "emptyText": "Add a computer under Computers to pick its sensors."
             },
             {
               "key": "label",
@@ -328,7 +332,8 @@
           "type": "string",
           "title": "Header sensor",
           "choices": "plugin",
-          "description": "A small value beside the title, such as coolant flow."
+          "description": "A small value beside the title, such as coolant flow.",
+          "emptyText": "Add a computer under Computers to pick its sensors."
         },
         {
           "key": "headerLabel",
@@ -508,7 +513,8 @@
       "visibleWhen": {
         "key": "autoSwitch",
         "equals": true
-      }
+      },
+      "emptyText": "Add a computer under Computers to pick its sensors."
     },
     {
       "key": "ruleDirection",
