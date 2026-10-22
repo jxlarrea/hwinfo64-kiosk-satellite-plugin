@@ -89,6 +89,9 @@ public final class HwinfoPlugin implements KioskPlugin {
     private final Set<String> runs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private volatile Board board;
     private boolean choicesPublished;
+    /** Whether the sensor pickers are on, null before the first poll and once KS cannot turn them off. */
+    private Boolean pickersOn;
+    private boolean pickersFixed;
     /** The combined sensors as of the last poll, by their ID. */
     private Map<String, HwinfoSnapshot.Reading> combined = new HashMap<>();
     /** A settings page shows this plugin somewhere, so the values in its sensor pickers are worth keeping fresh. */
@@ -247,6 +250,7 @@ public final class HwinfoPlugin implements KioskPlugin {
         }
         long now = System.currentTimeMillis();
         if (catalogChanged || !choicesPublished || settingsOpen && now - choicesAt >= CHOICES_REFRESH_MS) publishChoices();
+        switchPickers();
         publishEntities(current);
         board = buildBoard(current);
         for (BoardView view : views) view.show(board);
@@ -407,6 +411,23 @@ public final class HwinfoPlugin implements KioskPlugin {
         } catch (UnsupportedOperationException | LinkageError error) {
             choicesPublished = true;
             host.status("Update Kiosk Satellite to pick sensors from a list.", true);
+        }
+    }
+
+    /** The sensor pickers are on only while a computer answers, since there is nothing current to pick otherwise. */
+    private void switchPickers() {
+        if (pickersFixed) return;
+        boolean on = false;
+        for (Monitor monitor : monitors.values()) on |= monitor.snapshot != null;
+        if (pickersOn != null && pickersOn == on) return;
+        try {
+            for (String field : READING_FIELDS) host.setSettingChoicesEnabled(field, on);
+            host.setSettingChoicesEnabled(PART_FIELD, on);
+            host.setSettingChoicesEnabled(COMPUTER_FIELD, on);
+            pickersOn = on;
+        } catch (UnsupportedOperationException | LinkageError error) {
+            // Older Kiosk Satellite: the pickers stay on.
+            pickersFixed = true;
         }
     }
 

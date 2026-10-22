@@ -41,7 +41,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 
 1. Open **Plugin Manager > HWiNFO Monitor** and enable it.
 2. Under **Computers**, add each PC with a name and its IP address. Press **Test** to check that they answer.
-3. Under **Home Assistant**, add the sensors Home Assistant should get. The picker lists every sensor of every PC that answered. Press its refresh button to read them again.
+3. Under **Home Assistant**, add the sensors Home Assistant should get. The picker lists every sensor of every PC that answered. Press its refresh button to read them again. The sensor pickers stay off while no computer answers.
 4. Under **Screensaver**, press **Build** for a starter layout or add panels yourself. Then choose **PC sensors (HWiNFO Monitor)** under **Screensaver > Screensaver mode**, or let the automatic switch below pick it.
 5. Under **Automatic screensaver**, turn on **Switch screensaver automatically**, pick a sensor such as **CPU (Tctl/Tdie)** on AMD or **CPU Package** on Intel and set the limit and times.
 

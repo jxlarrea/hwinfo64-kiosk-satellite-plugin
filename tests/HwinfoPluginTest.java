@@ -30,6 +30,7 @@ public final class HwinfoPluginTest {
         starterLayoutFindsReadings();
         globsMatchWholeNames();
         pluginPublishesReadingsChoicesAndSwitches();
+        pickersStayOffWithoutAnAnsweringComputer();
         System.out.println("HwinfoPluginTest passed");
     }
 
@@ -297,6 +298,8 @@ public final class HwinfoPluginTest {
             waitFor(() -> host.commands.contains("clearScreensaverMode"), "the rule handing the screensaver back");
             check(Boolean.FALSE.equals(host.binary.get("rule_active")), "rule sensor off again");
 
+            check(host.pickersOff.isEmpty(), "pickers on while the computer answers");
+
             // The Overview tile goes away with its setting and comes back.
             waitFor(() -> "on|1 of 1 PC online".equals(host.tile), "the Overview tile");
             Map<String, Object> noTile = settings(server.getLocalPort());
@@ -336,6 +339,30 @@ public final class HwinfoPluginTest {
         return Collections.emptyMap();
     }
 
+    static void pickersStayOffWithoutAnAnsweringComputer() throws Exception {
+        java.util.List<String> fields = new ArrayList<>(Arrays.asList(HwinfoPlugin.READING_FIELDS));
+        fields.add(HwinfoPlugin.PART_FIELD);
+        fields.add(HwinfoPlugin.COMPUTER_FIELD);
+        // No computer added.
+        Host host = new Host();
+        HwinfoPlugin plugin = new HwinfoPlugin();
+        Map<String, Object> none = settings(0);
+        none.put("computers", Collections.emptyList());
+        plugin.start(host, none);
+        waitFor(() -> host.pickersOff.containsAll(fields), "the pickers off without a computer");
+        plugin.stop();
+        // A computer that does not answer: a port nothing listens on.
+        int closed;
+        try (ServerSocket socket = new ServerSocket(0)) {
+            closed = socket.getLocalPort();
+        }
+        Host other = new Host();
+        HwinfoPlugin quiet = new HwinfoPlugin();
+        quiet.start(other, settings(closed));
+        waitFor(() -> other.pickersOff.containsAll(fields), "the pickers off while no computer answers");
+        quiet.stop();
+    }
+
     interface Condition {
         boolean met();
     }
@@ -370,6 +397,8 @@ public final class HwinfoPluginTest {
         @Override public void subscribe(String event) {}
         @Override public void publishStatusTile(String key, String title, String level, String text) { tile = level + "|" + text; }
         @Override public void removeStatusTile(String key) { tile = null; }
+        final java.util.Set<String> pickersOff = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<String, Boolean>());
+        @Override public void setSettingChoicesEnabled(String key, boolean enabled) { if (enabled) pickersOff.remove(key); else pickersOff.add(key); }
         @Override public void publishScreensaverView(String key, String title, OverlayFactory factory) { screensaver = factory; }
         @Override public void setSettingChoices(String key, List<Map<String, Object>> list) { choices.put(key, new ArrayList<>(list)); }
         @Override public boolean setupResult(String run, String state, String message) { results.add(run + ":" + state); return true; }
