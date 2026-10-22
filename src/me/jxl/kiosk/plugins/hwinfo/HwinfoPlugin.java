@@ -670,7 +670,7 @@ public final class HwinfoPlugin implements KioskPlugin {
                 HwinfoSnapshot.Reading reading = resolve(panel.headerReading);
                 if (reading != null) empty.headers[p] = new Board.Value(reading.value, reading.unit);
             }
-            if (!panel.chart.isEmpty()) empty.charts[p] = chart(panel);
+            if (!panel.chart.isEmpty()) empty.charts[p] = chart(panel, lag(current));
         }
         return empty;
     }
@@ -696,13 +696,20 @@ public final class HwinfoPlugin implements KioskPlugin {
             if (reading != null) chartNames.put(entry.getKey(), new String[] {reading.label, reading.unit});
             java.util.ArrayDeque<double[]> samples = history.computeIfAbsent(entry.getKey(), id -> new java.util.ArrayDeque<>());
             samples.addLast(new double[] {now, reading == null ? Double.NaN : reading.value});
-            long oldest = now - entry.getValue() * 60_000L;
+            long oldest = now - entry.getValue() * 60_000L - 2 * lag(current);
             while (!samples.isEmpty() && samples.peekFirst()[0] < oldest) samples.removeFirst();
         }
     }
 
-    private Board.Chart chart(Config.Panel panel) {
-        long end = System.currentTimeMillis(), start = end - panel.chartMinutes * 60_000L;
+    /** One poll and a second for it to answer. The chart runs that far behind the clock. */
+    private static long lag(Config current) {
+        return current.intervalSeconds * 1000L + 1000;
+    }
+
+    private Board.Chart chart(Config.Panel panel, long lag) {
+        long span = panel.chartMinutes * 60_000L;
+        // A sample older than the left edge still draws the line into it.
+        long start = System.currentTimeMillis() - span - 2 * lag;
         List<Board.Series> series = new ArrayList<>();
         for (Config.Line line : panel.chart) {
             String id = line.reading;
@@ -719,7 +726,7 @@ public final class HwinfoPlugin implements KioskPlugin {
             String[] name = chartNames.getOrDefault(id, new String[] {id.startsWith(Config.Combined.PREFIX) ? id.substring(Config.Combined.PREFIX.length()) : "Sensor", ""});
             series.add(new Board.Series(line.label.isEmpty() ? name[0] : line.label, name[1], line.color, line.min, line.max, times, values));
         }
-        return new Board.Chart(series, start, end);
+        return new Board.Chart(series, span, lag);
     }
 
     private void publishScreensaver() {

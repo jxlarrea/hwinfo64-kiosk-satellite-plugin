@@ -347,11 +347,11 @@ public final class HwinfoPluginTest {
             // A chart follows its sensors over time, combined ones included.
             waitFor(() -> plugin.freshBoard().charts[0].series.get(0).values.length >= 3, "three chart samples");
             Board.Chart chart = plugin.freshBoard().charts[0];
-            check(chart.series.size() == 2 && chart.end - chart.start == 60_000, "two lines over one minute");
+            check(chart.series.size() == 2 && chart.span == 60_000 && chart.lag >= 2000, "two lines over one minute, a poll behind");
             check(chart.series.get(0).latest() == 47.625 && "Temperature".equals(chart.series.get(0).name), "the temperature line with its label");
             check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name) && chart.series.get(1).color == 0xFF00FF00
                 && chart.series.get(1).max == 6000, "the combined line in its color and scale");
-            check(chart.series.get(0).times[0] >= chart.start, "only samples inside the span");
+            check(chart.series.get(0).times[0] >= System.currentTimeMillis() - chart.span - 2 * chart.lag - 5000, "only samples near the span");
 
             // The Overview tile goes away with its setting and comes back.
             waitFor(() -> "on|1 of 1 PC online".equals(host.tile), "the Overview tile");

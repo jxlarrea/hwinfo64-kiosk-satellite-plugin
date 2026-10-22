@@ -43,13 +43,15 @@ final class Board {
 
     static final class Chart {
         final List<Series> series;
-        final long start;
-        final long end;
+        /** How far back the chart reaches, in milliseconds. */
+        final long span;
+        /** How far behind the clock the chart's right edge runs, so its lines always reach that edge. */
+        final long lag;
 
-        Chart(List<Series> series, long start, long end) {
+        Chart(List<Series> series, long span, long lag) {
             this.series = series;
-            this.start = start;
-            this.end = end;
+            this.span = span;
+            this.lag = lag;
         }
     }
 

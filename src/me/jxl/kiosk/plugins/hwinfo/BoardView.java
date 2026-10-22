@@ -63,6 +63,10 @@ final class BoardView extends View {
     /** One size for every value and one for every label on the screen, so a small tile and a large one read alike. */
     private float valueSize;
     private float labelSize;
+    /** Redraws the charts as they scroll. */
+    private final Runnable tick = this::invalidate;
+    /** The time one pixel of the fastest chart in this frame takes to scroll by. */
+    private long chartPixel;
 
     /** Where one panel and its parts sit, worked out again only when the layout or the size changes. */
     private static final class Box {
@@ -122,6 +126,7 @@ final class BoardView extends View {
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
         animate().cancel();
+        removeCallbacks(tick);
     }
 
     /** One percent of the shorter side, times the Text size setting. Type and icons scale with it. */
@@ -277,12 +282,17 @@ final class BoardView extends View {
             return;
         }
         if (!current.sameLayout(laidOut)) layout();
+        chartPixel = Long.MAX_VALUE;
         for (Box box : boxes) {
             // A computer that does not answer leaves its panels faded rather than gone.
             int saved = current.offline(box.panel) ? canvas.saveLayerAlpha(box.bounds, 128) : canvas.save();
             drawPanel(canvas, current, box);
             canvas.restoreToCount(saved);
         }
+        // Charts scroll a pixel at a time while they show. A hidden window draws nothing, which ends the loop
+        // until it shows again.
+        removeCallbacks(tick);
+        if (chartPixel != Long.MAX_VALUE) postDelayed(tick, Math.max(16, chartPixel));
     }
 
     private void drawPanel(Canvas canvas, Board current, Box box) {
@@ -517,10 +527,12 @@ final class BoardView extends View {
         }
 
         float stroke = Math.max(theme.px(2), 0.3f * u);
-        double total = Math.max(1, chart.end - chart.start);
-        // Values past a fixed scale run off its edge.
+        double total = Math.max(1, chart.span);
+        long start = System.currentTimeMillis() - chart.lag - chart.span;
+        chartPixel = Math.min(chartPixel, (long) (chart.span / Math.max(1, plot.width())));
+        // Lines run off both ends as they scroll and past a fixed scale's edge.
         canvas.save();
-        canvas.clipRect(plot.left - stroke, plot.top - stroke, plot.right + stroke, plot.bottom + stroke);
+        canvas.clipRect(plot.left, plot.top - stroke, plot.right, plot.bottom + stroke);
         for (int i = chart.series.size() - 1; i >= 0; i--) {
             Board.Series series = chart.series.get(i);
             double[] scale = scales[scaleOf[i]];
@@ -537,7 +549,7 @@ final class BoardView extends View {
                     drawing = false;
                     continue;
                 }
-                float px = plot.left + (float) ((series.times[s] - chart.start) / total) * plot.width();
+                float px = plot.left + (float) ((series.times[s] - start) / total) * plot.width();
                 float py = plot.bottom - (float) ((value - low) / (high - low)) * plot.height();
                 if (!drawing) {
                     line.moveTo(px, py);
