@@ -51,8 +51,9 @@ final class BoardView extends View {
     private final List<Box> boxes = new ArrayList<>();
     private Board board;
     private Board laidOut;
-    /** One size for every value on the screen, so a small tile and a large one read alike. */
+    /** One size for every value and one for every label on the screen, so a small tile and a large one read alike. */
     private float valueSize;
+    private float labelSize;
 
     /** Where one panel and its parts sit, worked out again only when the layout or the size changes. */
     private static final class Box {
@@ -193,33 +194,39 @@ final class BoardView extends View {
             }
             x += columnWidth + gap;
         }
-        valueSize = uniformValueSize(board.look);
+        uniformSizes(board.look);
     }
 
     /**
-     * The value size the smallest tile allows, times Value size, and never more than the size at which the
-     * tightest tile's value would crowd its label.
+     * The label and value sizes the smallest tile allows, times Label size and Value size. A value never grows
+     * past the size at which the tightest tile's value would crowd its label.
      */
-    private float uniformValueSize(Config.Look look) {
-        float fill = Float.MAX_VALUE, cap = Float.MAX_VALUE;
+    private void uniformSizes(Config.Look look) {
+        float label = Float.MAX_VALUE, fill = Float.MAX_VALUE;
         for (Box box : boxes) {
             Config.Panel panel = board.panels.get(box.panel);
             float width = box.grid.width() / panel.columns;
             float height = box.grid.height() / box.rows;
-            for (Config.Tile tile : panel.tiles) {
-                fill = Math.min(fill, Math.min(height * 0.42f, width * 0.25f));
-                cap = Math.min(cap, (height * 0.92f - labelRoom(look, tile, width, height)) / 0.7f);
-            }
+            if (panel.tiles.isEmpty()) continue;
+            label = Math.min(label, Math.min(height * 0.12f, width * 0.08f));
+            fill = Math.min(fill, Math.min(height * 0.42f, width * 0.25f));
         }
-        return fill == Float.MAX_VALUE ? 0 : Math.max(0, Math.min(fill * VALUE * look.valueScale, cap));
+        if (fill == Float.MAX_VALUE) {
+            labelSize = valueSize = 0;
+            return;
+        }
+        labelSize = label * LABEL * look.labelScale;
+        float cap = Float.MAX_VALUE;
+        for (Box box : boxes) {
+            Config.Panel panel = board.panels.get(box.panel);
+            float height = box.grid.height() / box.rows;
+            for (Config.Tile tile : panel.tiles) cap = Math.min(cap, (height * 0.92f - labelRoom(tile)) / 0.7f);
+        }
+        valueSize = Math.max(0, Math.min(fill * VALUE * look.valueScale, cap));
     }
 
-    private static float labelSize(Config.Look look, float width, float height) {
-        return Math.min(height * 0.12f, width * 0.08f) * LABEL * look.labelScale;
-    }
-
-    private static float labelRoom(Config.Look look, Config.Tile tile, float width, float height) {
-        return tile.label.isEmpty() ? 0 : labelSize(look, width, height) * 1.7f;
+    private float labelRoom(Config.Tile tile) {
+        return tile.label.isEmpty() ? 0 : labelSize * 1.7f;
     }
 
     private static boolean hasFooter(Config.Panel panel) {
@@ -320,9 +327,8 @@ final class BoardView extends View {
         String unit = value == null || !tile.unit || binary ? "" : value.unit;
         boolean alert = value != null && !Double.isNaN(tile.alertAbove) && value.number >= tile.alertAbove;
 
-        float labelSize = labelSize(look, width, height);
         boolean hasLabel = !tile.label.isEmpty();
-        float labelRoom = labelRoom(look, tile, width, height);
+        float labelRoom = labelRoom(tile);
         // The same size on every tile. Only a value too wide for its own tile shrinks below it.
         float size = valueSize;
         float unitGap = size * 0.06f;
