@@ -22,3 +22,4 @@
 - Show light and dark screenshots in the README and name the Kiosk Satellite version the plugin needs.
 - Keep the values in the sensor pickers fresh while a settings page is open, and head a renamed computer's sensors with its new name.
 - Add Overview tile to show or hide the PCs online tile on the Remote Admin Overview.
+- Open the README screenshots at full size when clicked.

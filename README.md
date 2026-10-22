@@ -4,7 +4,7 @@ A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that rea
 
 | Light theme | Dark theme |
 | --- | --- |
-| ![The PC sensors screensaver in the light theme](docs/screensaver_light.png) | ![The PC sensors screensaver in the dark theme](docs/screensaver_dark.png) |
+| [![The PC sensors screensaver in the light theme](docs/screensaver_light.png)](docs/screensaver_light.png) | [![The PC sensors screensaver in the dark theme](docs/screensaver_dark.png)](docs/screensaver_dark.png) |
 
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
