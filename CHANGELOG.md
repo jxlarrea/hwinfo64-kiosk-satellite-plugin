@@ -28,3 +28,4 @@
 - Turn the sensor and computer pickers off while no computer answers.
 - Match number ranges such as `{0-7}` in combined sensor names and rename the field to Match sensor name.
 - Show every sensor value and every label at one size, so Value size and Label size change them all alike.
+- Bring the panel titles closer to the top of their panels.

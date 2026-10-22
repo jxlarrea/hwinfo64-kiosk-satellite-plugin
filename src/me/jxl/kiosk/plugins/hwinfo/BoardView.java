@@ -26,6 +26,8 @@ final class BoardView extends View {
     private static final float TEXT = 1.05f;
     private static final float VALUE = 0.9f;
     private static final float LABEL = 1.3f;
+    /** Space above a panel's title, in dp. Tighter than the card padding at the sides. */
+    private static final int HEADER_TOP = 12;
 
     interface Logos {
         Path logo(String name);
@@ -166,7 +168,7 @@ final class BoardView extends View {
             }
             Box box = new Box(i);
             box.rows = Math.max(1, (panel.tiles.size() + panel.columns - 1) / panel.columns);
-            box.header = pad + 5.2f * u;
+            box.header = theme.px(HEADER_TOP) + 5.2f * u;
             box.footer = hasFooter(panel) ? 5.4f * u : 0;
             columns.get(columns.size() - 1).add(box);
             weights.set(weights.size() - 1, Math.max(weights.get(weights.size() - 1), panel.columns));
@@ -269,7 +271,7 @@ final class BoardView extends View {
         float pad = theme.px(theme.inset());
         float left = b.left + pad, right = b.right - pad;
         float tile = 5.2f * u;
-        float top = b.top + pad;
+        float top = b.top + theme.px(HEADER_TOP);
         float middle = top + tile / 2f;
         float x = left;
         Path icon = panel.icon.isEmpty() ? null : theme.iconPath(panel.icon);
