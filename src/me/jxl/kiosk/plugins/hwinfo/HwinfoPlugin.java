@@ -23,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 
 import me.jxl.kiosk.plugins.KioskPlugin;
@@ -39,7 +40,12 @@ public final class HwinfoPlugin implements KioskPlugin {
     static final String PLUGIN_ID = "hwinfo-pc-monitor";
     static final String SCREENSAVER = "board";
     static final String MODE = "plugin:" + PLUGIN_ID + ":" + SCREENSAVER;
+    /** Fields that take any sensor, combined ones included. */
     static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading", "ruleReading"};
+    /** The sensors a combined sensor is made of, which cannot be combined ones themselves. */
+    static final String PART_FIELD = "combined.sensors.reading";
+    static final String COMPUTER_FIELD = "combined.computer";
+    static final HwinfoSnapshot.Device COMBINED = new HwinfoSnapshot.Device(-1, 0, 0, "Combined sensors");
     static final int MAX_CHOICES = 2000;
     /** How often the sensor pickers get fresh values while a settings page is open. */
     static final long CHOICES_REFRESH_MS = 5_000;
@@ -83,6 +89,8 @@ public final class HwinfoPlugin implements KioskPlugin {
     private final Set<String> runs = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private volatile Board board;
     private boolean choicesPublished;
+    /** The combined sensors as of the last poll, by their ID. */
+    private Map<String, HwinfoSnapshot.Reading> combined = new HashMap<>();
     /** A settings page shows this plugin somewhere, so the values in its sensor pickers are worth keeping fresh. */
     private volatile boolean settingsOpen;
     private long choicesAt;
@@ -176,6 +184,7 @@ public final class HwinfoPlugin implements KioskPlugin {
 
     private void apply() {
         Config current = config;
+        choicesPublished = false;
         Map<String, Monitor> next = new LinkedHashMap<>();
         for (Config.Computer computer : current.computers) {
             Monitor existing = monitors.remove(computer.endpoint());
@@ -225,6 +234,7 @@ public final class HwinfoPlugin implements KioskPlugin {
     }
 
     private void publish(Config current) {
+        combined = combine(current);
         boolean catalogChanged = false;
         for (Monitor monitor : monitors.values()) {
             // The computer's name heads its sensors in the pickers, so a rename lists them again.
@@ -244,8 +254,12 @@ public final class HwinfoPlugin implements KioskPlugin {
         publishStatus();
     }
 
-    /** "CAPRICA/f0000501.0.1000000" to the reading it names, or null while that computer is offline. */
+    /** "CAPRICA/f0000501.0.1000000" or "combined/Max core clock" to the reading it names, or null without one. */
     private HwinfoSnapshot.Reading resolve(String id) {
+        return id.startsWith(Config.Combined.PREFIX) ? combined.get(id) : sensor(id);
+    }
+
+    private HwinfoSnapshot.Reading sensor(String id) {
         int slash = id.indexOf('/');
         if (slash <= 0) return null;
         String computer = id.substring(0, slash);
@@ -262,6 +276,80 @@ public final class HwinfoPlugin implements KioskPlugin {
         return name == null ? key : name;
     }
 
+    // Combined sensors.
+
+    private Map<String, HwinfoSnapshot.Reading> combine(Config current) {
+        Map<String, HwinfoSnapshot.Reading> out = new HashMap<>();
+        for (Config.Combined spec : current.combined) {
+            HwinfoSnapshot.Reading reading = combine(spec);
+            if (reading != null) out.put(spec.id(), reading);
+        }
+        return out;
+    }
+
+    /** One combined sensor from the parts that answer now, or null while none does. */
+    private HwinfoSnapshot.Reading combine(Config.Combined spec) {
+        List<HwinfoSnapshot.Reading> parts = new ArrayList<>();
+        if (spec.picked) {
+            for (String id : spec.sensors) {
+                HwinfoSnapshot.Reading part = sensor(id);
+                if (part != null) parts.add(part);
+            }
+        } else if (!spec.pattern.isEmpty()) {
+            Monitor monitor = monitorFor(spec.computer);
+            if (monitor != null) {
+                Pattern pattern = glob(spec.pattern);
+                for (HwinfoSnapshot.Reading part : monitor.snapshot.readings) {
+                    if (pattern.matcher(part.label).matches()) parts.add(part);
+                }
+            }
+        }
+        // One unit only, so a sum of power never takes a load percentage along.
+        String unit = spec.unit.isEmpty() ? parts.isEmpty() ? "" : parts.get(0).unit : spec.unit;
+        List<HwinfoSnapshot.Reading> kept = new ArrayList<>();
+        for (HwinfoSnapshot.Reading part : parts) if (part.unit.equalsIgnoreCase(unit)) kept.add(part);
+        if (kept.isEmpty()) return null;
+        double[] value = new double[kept.size()], min = new double[kept.size()], max = new double[kept.size()], avg = new double[kept.size()];
+        for (int i = 0; i < kept.size(); i++) {
+            HwinfoSnapshot.Reading part = kept.get(i);
+            value[i] = part.value;
+            min[i] = part.min;
+            max[i] = part.max;
+            avg[i] = part.avg;
+        }
+        // Each statistic combines the parts' own, such as the highest of their maximums.
+        return new HwinfoSnapshot.Reading(spec.id(), kept.get(0).type, COMBINED, spec.name, kept.get(0).unit,
+                apply(spec.function, value), apply(spec.function, min), apply(spec.function, max), apply(spec.function, avg));
+    }
+
+    static double apply(String function, double[] values) {
+        double out = function.equals("Minimum") ? Double.POSITIVE_INFINITY : function.equals("Maximum") ? Double.NEGATIVE_INFINITY : 0;
+        for (double value : values) {
+            if (function.equals("Minimum")) out = Math.min(out, value);
+            else if (function.equals("Maximum")) out = Math.max(out, value);
+            else out += value;
+        }
+        return function.equals("Average") ? out / values.length : out;
+    }
+
+    /** "Core * Effective Clock" matches whole names, any text in place of each star, ignoring case. */
+    static Pattern glob(String pattern) {
+        StringBuilder regex = new StringBuilder();
+        for (String part : pattern.trim().split("\\*", -1)) {
+            if (regex.length() > 0 || pattern.trim().startsWith("*")) regex.append(".*");
+            if (!part.isEmpty()) regex.append(Pattern.quote(part));
+        }
+        return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE);
+    }
+
+    /** The computer a name pattern looks at: the one picked, else the first that answers. */
+    private Monitor monitorFor(String key) {
+        for (Monitor monitor : monitors.values()) {
+            if (monitor.snapshot != null && (key.isEmpty() || monitor.key().equals(key))) return monitor;
+        }
+        return null;
+    }
+
     static String id(Monitor monitor, HwinfoSnapshot.Reading reading) {
         return monitor.key() + "/" + reading.key;
     }
@@ -269,11 +357,33 @@ public final class HwinfoPlugin implements KioskPlugin {
     // Settings choices.
 
     private void publishChoices() {
+        Config current = config;
+        List<Map<String, Object>> sensors = new ArrayList<>();
+        List<Map<String, Object>> computers = new ArrayList<>();
+        for (Monitor monitor : monitors.values()) {
+            if (monitor.snapshot == null) continue;
+            Map<String, Object> computer = new LinkedHashMap<>();
+            computer.put("id", monitor.key());
+            computer.put("label", clip(monitor.computer.name, 120));
+            computer.put("icon", "mdi:desktop-tower-monitor");
+            computers.add(computer);
+        }
         List<Map<String, Object>> choices = new ArrayList<>();
+        for (Config.Combined spec : current.combined) {
+            HwinfoSnapshot.Reading reading = combined.get(spec.id());
+            Map<String, Object> choice = new LinkedHashMap<>();
+            choice.put("id", spec.id());
+            choice.put("label", clip(spec.name, 120));
+            choice.put("group", "Combined sensors");
+            if (reading != null) choice.put("value", clip(Units.describe(reading.value, reading.unit), 40));
+            choice.put("category", reading == null ? "Other" : Units.category(reading.type, reading.unit));
+            choice.put("icon", combinedIcon(spec.function));
+            choices.add(choice);
+        }
         for (Monitor monitor : monitors.values()) {
             if (monitor.snapshot == null) continue;
             for (HwinfoSnapshot.Reading reading : monitor.snapshot.readings) {
-                if (choices.size() >= MAX_CHOICES) break;
+                if (sensors.size() >= MAX_CHOICES) break;
                 Map<String, Object> choice = new LinkedHashMap<>();
                 choice.put("id", id(monitor, reading));
                 choice.put("label", clip(reading.label, 120));
@@ -281,18 +391,31 @@ public final class HwinfoPlugin implements KioskPlugin {
                 choice.put("value", clip(Units.describe(reading.value, reading.unit), 40));
                 choice.put("category", Units.category(reading.type, reading.unit));
                 choice.put("icon", Units.icon(reading.type, reading.unit));
-                choices.add(choice);
+                sensors.add(choice);
             }
         }
         // Nothing to offer yet. Keep whatever KS remembers from the last session instead of an empty list.
-        if (choices.isEmpty()) return;
+        if (sensors.isEmpty()) return;
+        choices.addAll(sensors);
+        if (choices.size() > MAX_CHOICES) choices = new ArrayList<>(choices.subList(0, MAX_CHOICES));
         try {
             for (String field : READING_FIELDS) host.setSettingChoices(field, choices);
+            host.setSettingChoices(PART_FIELD, sensors);
+            host.setSettingChoices(COMPUTER_FIELD, computers);
             choicesPublished = true;
             choicesAt = System.currentTimeMillis();
         } catch (UnsupportedOperationException | LinkageError error) {
             choicesPublished = true;
             host.status("Update Kiosk Satellite to pick sensors from a list.", true);
+        }
+    }
+
+    static String combinedIcon(String function) {
+        switch (function) {
+            case "Minimum": return "mdi:arrow-down-bold-outline";
+            case "Sum": return "mdi:sigma";
+            case "Average": return "mdi:approximately-equal";
+            default: return "mdi:arrow-up-bold-outline";
         }
     }
 
@@ -402,7 +525,10 @@ public final class HwinfoPlugin implements KioskPlugin {
             (binary ? wantedBinary : wantedSensors).add(key);
             // Waits for the first reading, so the entity starts with its real name and unit.
             if (reading == null && !sensors.contains(key) && !binarySensors.contains(key)) continue;
-            String name = clip(export.name.isEmpty() ? computerName(export.reading) + " " + (reading == null ? "sensor" : reading.label) : export.name, 80);
+            boolean merged = export.reading.startsWith(Config.Combined.PREFIX);
+            String own = merged ? export.reading.substring(Config.Combined.PREFIX.length())
+                    : computerName(export.reading) + " " + (reading == null ? "sensor" : reading.label);
+            String name = clip(export.name.isEmpty() ? own : export.name, 80);
             if (binary) {
                 Boolean state = reading == null ? null : reading.value != 0;
                 if (!binarySensors.contains(key) || !equal(state, lastStates.get(key))) {

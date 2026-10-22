@@ -24,6 +24,35 @@ final class Config {
         }
     }
 
+    /** A sensor made of several: their highest, lowest, total or average. */
+    static final class Combined {
+        static final String PREFIX = "combined/";
+
+        final String name;
+        final String function;
+        /** True for the sensors the user picked, false for every sensor matching a name. */
+        final boolean picked;
+        final List<String> sensors;
+        final String computer;
+        final String pattern;
+        final String unit;
+
+        Combined(String name, String function, boolean picked, List<String> sensors, String computer, String pattern, String unit) {
+            this.name = name;
+            this.function = function;
+            this.picked = picked;
+            this.sensors = sensors;
+            this.computer = computer;
+            this.pattern = pattern;
+            this.unit = unit;
+        }
+
+        /** What the pickers and the other settings store for it. */
+        String id() {
+            return PREFIX + name;
+        }
+    }
+
     static final class Export {
         final String reading;
         final String name;
@@ -114,6 +143,7 @@ final class Config {
     final int intervalSeconds;
     final boolean statusTile;
     final List<Export> exports;
+    final List<Combined> combined;
     final List<Panel> panels;
     final Look look;
     final boolean autoSwitch;
@@ -153,6 +183,23 @@ final class Config {
             if (!reading.isEmpty()) exports.add(new Export(reading, text(row.get("name"))));
         }
         this.exports = Collections.unmodifiableList(exports);
+
+        List<Combined> combined = new ArrayList<>();
+        java.util.Set<String> names = new java.util.HashSet<>();
+        for (Map<String, Object> row : rows(settings.get("combined"))) {
+            String name = text(row.get("name"));
+            // Two with one name would share an ID, so the first one wins.
+            if (name.isEmpty() || !names.add(name)) continue;
+            List<String> sensors = new ArrayList<>();
+            for (Map<String, Object> sensor : rows(row.get("sensors"))) {
+                String reading = text(sensor.get("reading"));
+                if (!reading.isEmpty()) sensors.add(reading);
+            }
+            combined.add(new Combined(name, text(row.get("function")).isEmpty() ? "Maximum" : text(row.get("function")),
+                    !"Match a name".equals(row.get("source")), Collections.unmodifiableList(sensors),
+                    text(row.get("computer")), text(row.get("pattern")), text(row.get("unit"))));
+        }
+        this.combined = Collections.unmodifiableList(combined);
 
         List<Panel> panels = new ArrayList<>();
         for (Map<String, Object> row : rows(settings.get("panels"))) {

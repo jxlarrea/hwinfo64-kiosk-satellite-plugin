@@ -69,6 +69,107 @@
       "description": "Shows how many PCs are online on the Remote Admin Overview."
     },
     {
+      "key": "combined",
+      "type": "list",
+      "title": "Combined sensors",
+      "group": "Combined sensors",
+      "description": "Each one is a new sensor made of several, such as the highest core clock or two UPSes added up. Pick it like any other sensor for Home Assistant, a panel or the automatic screensaver.",
+      "addTitle": "Add combined sensor",
+      "maxItems": 16,
+      "row": {
+        "title": "name",
+        "subtitle": "function"
+      },
+      "default": [],
+      "fields": [
+        {
+          "key": "name",
+          "type": "string",
+          "title": "Name",
+          "required": true,
+          "description": "Such as Max core clock or Total power."
+        },
+        {
+          "key": "function",
+          "type": "select",
+          "title": "Combine with",
+          "options": [
+            "Maximum",
+            "Minimum",
+            "Sum",
+            "Average"
+          ],
+          "default": "Maximum"
+        },
+        {
+          "key": "source",
+          "type": "select",
+          "title": "Sensors",
+          "options": [
+            "Pick them",
+            "Match a name"
+          ],
+          "default": "Pick them"
+        },
+        {
+          "key": "sensors",
+          "type": "list",
+          "title": "Sensors",
+          "addTitle": "Add sensor",
+          "maxItems": 32,
+          "minItems": 1,
+          "visibleWhen": {
+            "key": "source",
+            "equals": "Pick them"
+          },
+          "row": {
+            "title": "reading"
+          },
+          "fields": [
+            {
+              "key": "reading",
+              "type": "string",
+              "title": "Sensor",
+              "choices": "plugin",
+              "required": true
+            }
+          ]
+        },
+        {
+          "key": "computer",
+          "type": "string",
+          "title": "Computer",
+          "choices": "plugin",
+          "required": true,
+          "visibleWhen": {
+            "key": "source",
+            "equals": "Match a name"
+          }
+        },
+        {
+          "key": "pattern",
+          "type": "string",
+          "title": "Name",
+          "required": true,
+          "visibleWhen": {
+            "key": "source",
+            "equals": "Match a name"
+          },
+          "description": "The sensors whose name matches, where * stands for any text, such as Core * Effective Clock."
+        },
+        {
+          "key": "unit",
+          "type": "string",
+          "title": "Unit",
+          "visibleWhen": {
+            "key": "source",
+            "equals": "Match a name"
+          },
+          "description": "Only sensors in this unit, such as W. Leave empty to use the unit of the first match."
+        }
+      ]
+    },
+    {
       "key": "exports",
       "type": "list",
       "title": "Sensors",
@@ -512,6 +613,9 @@
   "groups": [
     {
       "title": "Computers"
+    },
+    {
+      "title": "Combined sensors"
     },
     {
       "title": "Home Assistant",

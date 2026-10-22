@@ -9,6 +9,7 @@ A [Kiosk Satellite](https://github.com/jxlarrea/kiosk-satellite) plugin that rea
 - **Several PCs at once.** Add every PC that runs HWiNFO. Sensors from all of them show in one searchable picker, grouped by computer and device, with their current values.
 - **Home Assistant sensors.** Each sensor you pick shows up on the kiosk's ESPHome device, with the right unit and device class. Yes or no sensors become binary sensors. Every PC also gets an online sensor.
 - **PC sensors screensaver.** Panels with a title, an icon, a grid of large values and an optional footer with a logo, drawn natively by the kiosk in its own look, light or dark with the Kiosk Satellite theme. Panels can share a column. Tiles can show the current, minimum, maximum or average value and turn red past a limit. **Build** makes a starter layout from your own sensors.
+- **Combined sensors.** Make one sensor from several: the highest core clock, the coolest drive or two UPSes added up. Use it anywhere you pick a sensor.
 - **Automatic switching.** Show PC sensors while a sensor stays past a limit, for example while the CPU temperature stays above 80°C for 30 seconds. Your own screensaver setting returns once it cools down again.
 
 This plugin is not affiliated with or endorsed by REALiX or HWiNFO. Its icon is the official HWiNFO logo, used only to show the service it connects to.
@@ -51,6 +52,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Computers | Computers | Name and address of each PC. Add `:port` to the address if HWiNFO doesn't use 27007. Up to 8 |
 | Computers | Update every | Seconds between updates, 1 to 30 |
 | Computers | Overview tile | Shows how many PCs are online on the Remote Admin Overview |
+| Combined sensors | Combined sensors | Sensors made of several, by maximum, minimum, sum or average. Up to 16 |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
 | Screensaver | Panels | Title, icon, columns, stacking, sensors, header sensor, footer text and logo of each panel |
 | Screensaver | Theme, Custom colors, Accent color, Panel color, Background, Text color, Text size, Value size, Label size | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |
@@ -62,6 +64,16 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 The **Show PC sensors** action starts the PC sensors screensaver right away until it is dismissed. Assign it to a gesture, the kiosk drawer or a Home Assistant button from the plugin page.
 
 Sensors are saved by the PC's own name and HWiNFO's sensor IDs, so they survive a new IP address and HWiNFO restarts.
+
+## Combined sensors
+
+A combined sensor shows up under **Combined sensors** at the top of every sensor picker, so a panel, Home Assistant or the automatic screensaver can use it like any other sensor. It takes the unit of its first sensor and leaves out sensors in another unit, so a sum of watts never adds a load percentage. It has no value while none of its sensors answers.
+
+**Highest core clock.** Add a combined sensor named **Max core clock**, set **Combine with** to **Maximum** and **Sensors** to **Match a name**. Pick the computer and type `Core * Effective Clock` as the name. Every core and thread clock counts, while **Average Effective Clock** and the GPU's clock don't.
+
+**Total power of two UPSes.** Add a combined sensor named **Total power**, set **Combine with** to **Sum** and **Sensors** to **Pick them**. Add the **UPS Load** sensor in watts of each UPS.
+
+Tiles that show the minimum, maximum or average combine the same statistic of each sensor, such as the highest of their maximums.
 
 ## Home Assistant
 

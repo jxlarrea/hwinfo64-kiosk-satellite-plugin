@@ -28,16 +28,17 @@ public final class HwinfoPluginTest {
         unitsReadWell();
         configReadsRows();
         starterLayoutFindsReadings();
+        globsMatchWholeNames();
         pluginPublishesReadingsChoicesAndSwitches();
         System.out.println("HwinfoPluginTest passed");
     }
 
-    // A pretend HWiNFO: two devices and four readings, in the version 2 layout real servers send.
+    // A pretend HWiNFO: two devices and six readings, in the version 2 layout real servers send.
 
     static double fps = 120;
 
     static byte[] sensors() {
-        int sensorSize = 392, readingSize = 460, devices = 2, readings = 4;
+        int sensorSize = 392, readingSize = 460, devices = 2, readings = 6;
         int sensorOffset = 48, readingOffset = sensorOffset + sensorSize * devices;
         ByteBuffer memory = ByteBuffer.allocate(readingOffset + readingSize * readings).order(ByteOrder.LITTLE_ENDIAN);
         memory.put("HWiS".getBytes(StandardCharsets.US_ASCII)).putInt(2).putInt(1).putLong(0)
@@ -48,7 +49,9 @@ public final class HwinfoPluginTest {
         reading(memory, at, 1, 0, 0x01000000L, "CPU (Tctl/Tdie)", "°C", 47.625);
         reading(memory, at += readingSize, 5, 0, 0x05000000L, "CPU Package Power", "W", 79.9);
         reading(memory, at += readingSize, 8, 0, 0x08000000L, "PMIC High Temperature", "Yes/No", 0);
-        reading(memory, at + readingSize, 8, 1, 0x08000000L, "Framerate Presented (avg)", "FPS", fps);
+        reading(memory, at += readingSize, 8, 1, 0x08000000L, "Framerate Presented (avg)", "FPS", fps);
+        reading(memory, at += readingSize, 6, 0, 0x06000000L, "Core 0 Clock", "MHz", 4000);
+        reading(memory, at + readingSize, 6, 0, 0x06000001L, "Core 1 Clock", "MHz", 5200);
         byte[] shared = memory.array();
         ByteBuffer body = ByteBuffer.allocate(12 + shared.length).order(ByteOrder.LITTLE_ENDIAN);
         body.put("PRWH".getBytes(StandardCharsets.US_ASCII)).putInt(2).putInt(shared.length).put(shared);
@@ -116,7 +119,7 @@ public final class HwinfoPluginTest {
     static void protocolParsesSharedMemory() throws IOException {
         HwinfoSnapshot snapshot = HwinfoProtocol.parseSensors(sensors(), "TESTPC", "v8");
         check(snapshot.devices.size() == 2, "two devices");
-        check(snapshot.readings.size() == 4, "four readings");
+        check(snapshot.readings.size() == 6, "six readings");
         HwinfoSnapshot.Reading temperature = snapshot.byKey.get("f0000501.0.1000000");
         check(temperature != null && temperature.label.equals("CPU (Tctl/Tdie)"), "reading keyed by device and reading ID");
         check(temperature.unit.equals("°C") && temperature.type.equals("temperature"), "unit and type");
@@ -179,6 +182,15 @@ public final class HwinfoPluginTest {
         check(tiles.get(0).get("reading").equals("TESTPC/f0000501.0.1000000"), "temperature first");
     }
 
+    static void globsMatchWholeNames() {
+        check(HwinfoPlugin.glob("Core * Effective Clock").matcher("Core 12 T1 Effective Clock").matches(), "a star stands for any text");
+        check(!HwinfoPlugin.glob("Core * Effective Clock").matcher("Average Effective Clock").matches(), "the rest of the name must match");
+        check(HwinfoPlugin.glob("ups load").matcher("UPS Load").matches(), "case does not matter");
+        check(HwinfoPlugin.glob("*Clock").matcher("GPU Clock").matches() && HwinfoPlugin.glob("GPU*").matcher("GPU Clock").matches(), "stars at either end");
+        check(HwinfoPlugin.glob("Load (W)").matcher("Load (W)").matches(), "other characters are plain text");
+        check(HwinfoPlugin.apply("Average", new double[] {2, 4}) == 3 && HwinfoPlugin.apply("Minimum", new double[] {2, 4}) == 2, "functions");
+    }
+
     static Map<String, Object> settings(int port) {
         Map<String, Object> settings = new HashMap<>();
         Map<String, Object> computer = new LinkedHashMap<>();
@@ -192,7 +204,29 @@ public final class HwinfoPluginTest {
         Map<String, Object> flag = new LinkedHashMap<>();
         flag.put("reading", "TESTPC/f0000501.0.8000000");
         flag.put("name", "PMIC alarm");
-        settings.put("exports", Arrays.asList(export, flag));
+        Map<String, Object> merged = new LinkedHashMap<>();
+        merged.put("reading", "combined/Max clock");
+        merged.put("name", "");
+        settings.put("exports", Arrays.asList(export, flag, merged));
+        // The highest core clock by name, and a sum of picked sensors that leaves the temperature out for its unit.
+        Map<String, Object> highest = new LinkedHashMap<>();
+        highest.put("name", "Max clock");
+        highest.put("function", "Maximum");
+        highest.put("source", "Match a name");
+        highest.put("sensors", Collections.emptyList());
+        highest.put("computer", "TESTPC");
+        highest.put("pattern", "Core * Clock");
+        highest.put("unit", "");
+        Map<String, Object> total = new LinkedHashMap<>();
+        total.put("name", "Total clock");
+        total.put("function", "Sum");
+        total.put("source", "Pick them");
+        total.put("sensors", Arrays.asList(Collections.singletonMap("reading", "TESTPC/f0000501.0.6000000"),
+                Collections.singletonMap("reading", "TESTPC/f0000501.0.6000001"), Collections.singletonMap("reading", "TESTPC/f0000501.0.1000000")));
+        total.put("computer", "");
+        total.put("pattern", "");
+        total.put("unit", "");
+        settings.put("combined", Arrays.asList(highest, total));
         Map<String, Object> tile = new LinkedHashMap<>();
         tile.put("reading", "TESTPC/f0000501.0.1000000");
         tile.put("label", "Temperature");
@@ -242,11 +276,21 @@ public final class HwinfoPluginTest {
             check(host.binary.containsKey("r" + HwinfoPlugin.hash("TESTPC/f0000501.0.8000000")), "Yes/No readings become binary sensors");
             check(Boolean.TRUE.equals(host.binary.get("pc_" + HwinfoPlugin.hash("127.0.0.1:" + server.getLocalPort()))), "computer online");
             check(host.choices.keySet().containsAll(Arrays.asList(HwinfoPlugin.READING_FIELDS)), "every reading field gets choices");
-            Map<String, Object> first = host.choices.get("panels.tiles.reading").get(0);
+            Map<String, Object> first = host.choices.get("panels.tiles.reading").stream().filter(c -> "TESTPC/f0000501.0.1000000".equals(c.get("id"))).findFirst().orElse(Collections.<String, Object>emptyMap());
             check(first.get("id").equals("TESTPC/f0000501.0.1000000") && first.get("group").equals("Gaming PC · CPU [#0]: AMD Ryzen 9 9950X3D: Enhanced"), "choice id and group");
             check("mdi:thermometer".equals(first.get("icon")), "choice icon by reading type");
             check("Temperature".equals(first.get("category")) && "48\u00b0C".equals(first.get("value")), "choice category chip and value");
             check(host.screensaver != null, "native screensaver registered");
+
+            // Combined sensors.
+            waitFor(() -> "5,200 MHz".equals(choice(host, "combined/Max clock").get("value")), "the highest core clock");
+            check("9,200 MHz".equals(choice(host, "combined/Total clock").get("value")), "picked clocks added up without the temperature");
+            check("Combined sensors".equals(choice(host, "combined/Max clock").get("group")), "combined sensors under their own heading");
+            check(host.choices.get(HwinfoPlugin.PART_FIELD).stream().noneMatch(c -> String.valueOf(c.get("id")).startsWith("combined/")), "no combined sensor inside another");
+            check("TESTPC".equals(host.choices.get(HwinfoPlugin.COMPUTER_FIELD).get(0).get("id")), "computers to match names on");
+            String mergedKey = "r" + HwinfoPlugin.hash("combined/Max clock");
+            waitFor(() -> Double.valueOf(5200).equals(host.sensors.get(mergedKey)), "the combined sensor in Home Assistant");
+            check("Max clock".equals(host.names.get(mergedKey)), "named after the combined sensor");
 
             waitFor(() -> host.commands.contains("setScreensaverMode:" + HwinfoPlugin.MODE), "the rule switching to PC sensors");
             fps = 30;
