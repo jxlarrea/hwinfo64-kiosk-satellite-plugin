@@ -460,16 +460,28 @@ final class BoardView extends View {
             lows[scaleOf[i]] = Math.min(lows[scaleOf[i]], range[0]);
             highs[scaleOf[i]] = Math.max(highs[scaleOf[i]], range[1]);
         }
-        if (lows[0] == Double.POSITIVE_INFINITY) return;
+        // A line with a fixed scale fixes it for every line in its unit, from the lowest minimum to the highest maximum.
+        double[] fixedLows = new double[units.size()], fixedHighs = new double[units.size()];
+        java.util.Arrays.fill(fixedLows, Double.NaN);
+        java.util.Arrays.fill(fixedHighs, Double.NaN);
+        for (int i = 0; i < chart.series.size(); i++) {
+            Board.Series series = chart.series.get(i);
+            if (Double.isNaN(series.min)) continue;
+            int k = scaleOf[i];
+            fixedLows[k] = Double.isNaN(fixedLows[k]) ? series.min : Math.min(fixedLows[k], series.min);
+            fixedHighs[k] = Double.isNaN(fixedHighs[k]) ? series.max : Math.max(fixedHighs[k], series.max);
+        }
+        if (lows[0] == Double.POSITIVE_INFINITY && Double.isNaN(fixedLows[0])) return;
 
         // Round steps for the first scale, with as many as fit. A second scale takes the same count so both
         // sides mark the same guides.
         int steps = Math.max(2, Math.min(4, (int) (plot.height() / (mark * 2.6f))));
         double[][] scales = new double[units.size()][];
-        scales[0] = scale(lows[0], highs[0], steps, 0);
+        scales[0] = Double.isNaN(fixedLows[0]) ? scale(lows[0], highs[0], steps, 0) : fixed(fixedLows[0], fixedHighs[0], steps);
         steps = (int) Math.round((scales[0][1] - scales[0][0]) / scales[0][2]);
         for (int k = 1; k < units.size(); k++) {
-            if (lows[k] != Double.POSITIVE_INFINITY) scales[k] = scale(lows[k], highs[k], steps, steps);
+            if (!Double.isNaN(fixedLows[k])) scales[k] = new double[] {fixedLows[k], fixedHighs[k], (fixedHighs[k] - fixedLows[k]) / steps};
+            else if (lows[k] != Double.POSITIVE_INFINITY) scales[k] = scale(lows[k], highs[k], steps, steps);
         }
 
         // The values along the sides.
@@ -481,6 +493,8 @@ final class BoardView extends View {
         for (int side = 0; side < marks.length; side++) {
             double[] scale = scales[side];
             int places = places(scale[2]);
+            // A fixed scale's step can repeat forever, such as a third of 100.
+            if (places == 4) places = 2;
             for (int t = 0; t <= steps; t++) {
                 String number = Units.number(scale[0] + t * scale[2], units.get(side), places);
                 marks[side][t] = look.chartUnits ? Units.withUnit(number, units.get(side)) : number;
@@ -504,6 +518,9 @@ final class BoardView extends View {
 
         float stroke = Math.max(theme.px(2), 0.3f * u);
         double total = Math.max(1, chart.end - chart.start);
+        // Values past a fixed scale run off its edge.
+        canvas.save();
+        canvas.clipRect(plot.left - stroke, plot.top - stroke, plot.right + stroke, plot.bottom + stroke);
         for (int i = chart.series.size() - 1; i >= 0; i--) {
             Board.Series series = chart.series.get(i);
             double[] scale = scales[scaleOf[i]];
@@ -549,6 +566,7 @@ final class BoardView extends View {
             pen.setColor(seriesColor(chart, i));
             canvas.drawPath(line, pen);
         }
+        canvas.restore();
     }
 
     /**
@@ -564,6 +582,15 @@ final class BoardView extends View {
             step = round(step * 1.01);
         }
         return new double[] {low, high, (high - low) / Math.max(1, exact > 0 ? exact : steps)};
+    }
+
+    /** A scale from low to high in the most steps up to [steps] that land on round values, else in [steps] steps. */
+    static double[] fixed(double low, double high, int steps) {
+        for (int count = steps; count >= 2; count--) {
+            double step = (high - low) / count;
+            if (Math.abs(round(step) - step) <= 1e-9 * Math.max(1, step)) return new double[] {low, high, step};
+        }
+        return new double[] {low, high, (high - low) / steps};
     }
 
     /** The next step at or above [raw] from 1, 2, 2.5 and 5 times a power of ten. */

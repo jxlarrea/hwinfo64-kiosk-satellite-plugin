@@ -183,6 +183,9 @@ public final class HwinfoPluginTest {
         check(Config.of(crowded).panels.get(0).chart.size() == 3, "three lines at most");
         check(Arrays.equals(BoardView.scale(38.2, 52.7, 4, 0), new double[] {35, 55, 5}), "a scale in round steps");
         check(Arrays.equals(BoardView.scale(4000, 5200, 4, 4), new double[] {4000, 6000, 500}), "a scale with a set count of steps");
+        check(Double.isNaN(config.panels.get(0).chart.get(0).min) && config.panels.get(0).chart.get(1).max == 6000, "a fixed scale on one line");
+        check(Arrays.equals(BoardView.fixed(0, 6000, 4), new double[] {0, 6000, 2000}) && Arrays.equals(BoardView.fixed(0, 100, 4), new double[] {0, 100, 25}),
+                "a fixed scale in round steps where it can");
         check(BoardView.places(2.5) == 1 && BoardView.places(50) == 0, "decimals of a step");
         check(config.readings().contains("TESTPC/f0000ff0.0.8000000"), "rule reading counts as used");
     }
@@ -272,6 +275,9 @@ public final class HwinfoPluginTest {
         clock.put("show", "Chart line");
         clock.put("customLine", true);
         clock.put("lineColor", "#00FF00");
+        clock.put("fixedScale", true);
+        clock.put("scaleMin", 0.0);
+        clock.put("scaleMax", 6000.0);
         Map<String, Object> panel = new LinkedHashMap<>();
         panel.put("title", "CPU");
         panel.put("icon", "mdi:cpu-64-bit");
@@ -343,7 +349,8 @@ public final class HwinfoPluginTest {
             Board.Chart chart = plugin.freshBoard().charts[0];
             check(chart.series.size() == 2 && chart.end - chart.start == 60_000, "two lines over one minute");
             check(chart.series.get(0).latest() == 47.625 && "Temperature".equals(chart.series.get(0).name), "the temperature line with its label");
-            check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name) && chart.series.get(1).color == 0xFF00FF00, "the combined line in its color");
+            check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name) && chart.series.get(1).color == 0xFF00FF00
+                && chart.series.get(1).max == 6000, "the combined line in its color and scale");
             check(chart.series.get(0).times[0] >= chart.start, "only samples inside the span");
 
             // The Overview tile goes away with its setting and comes back.

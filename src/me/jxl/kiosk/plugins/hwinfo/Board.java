@@ -20,13 +20,18 @@ final class Board {
         final String unit;
         /** 0 takes the line's color from the look. */
         final int color;
+        /** The bottom and top of a fixed scale, NaN while the scale follows the values. */
+        final double min;
+        final double max;
         final long[] times;
         final double[] values;
 
-        Series(String name, String unit, int color, long[] times, double[] values) {
+        Series(String name, String unit, int color, double min, double max, long[] times, double[] values) {
             this.name = name;
             this.unit = unit;
             this.color = color;
+            this.min = min;
+            this.max = max;
             this.times = times;
             this.values = values;
         }

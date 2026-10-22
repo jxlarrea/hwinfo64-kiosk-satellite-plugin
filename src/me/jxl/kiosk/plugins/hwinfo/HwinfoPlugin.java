@@ -717,7 +717,7 @@ public final class HwinfoPlugin implements KioskPlugin {
                 values[i] = kept.get(i)[1];
             }
             String[] name = chartNames.getOrDefault(id, new String[] {id.startsWith(Config.Combined.PREFIX) ? id.substring(Config.Combined.PREFIX.length()) : "Sensor", ""});
-            series.add(new Board.Series(line.label.isEmpty() ? name[0] : line.label, name[1], line.color, times, values));
+            series.add(new Board.Series(line.label.isEmpty() ? name[0] : line.label, name[1], line.color, line.min, line.max, times, values));
         }
         return new Board.Chart(series, start, end);
     }

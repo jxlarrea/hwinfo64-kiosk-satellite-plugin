@@ -54,7 +54,7 @@ Or search for `HWiNFO Monitor` in **Settings > Plugin Manager > Browse plugins**
 | Computers | Overview tile | Shows how many PCs are online on the Remote Admin Overview |
 | Combined sensors | Combined sensors | Sensors made of several, by maximum, minimum, sum or average. Up to 16 |
 | Home Assistant | Sensors | Sensors sent to Home Assistant, with an optional name. Up to 22 |
-| Screensaver | Panels | Title, icon, columns, stacking, sensors, chart history, header sensor, footer text and logo of each panel. **Show as** puts each sensor in the panel as a value, a chart line or both. A panel charts its first three chart lines |
+| Screensaver | Panels | Title, icon, columns, stacking, sensors, chart history, header sensor, footer text and logo of each panel. **Show as** puts each sensor in the panel as a value, a chart line or both. A panel charts its first three chart lines. A chart line can set a fixed minimum and maximum instead of scaling to its values |
 | Screensaver appearance | Theme, Custom colors, Accent color, Panel color, Background, Text color, Header color, Label color, Text size, Value size, Label size, Chart label size, Units on the chart scale | How the screensaver looks. Theme picks light or dark, or Auto to follow the Kiosk Satellite theme. Custom colors replaces the theme with your own colors |
 | Automatic screensaver | Switch screensaver automatically | Turns the rule on |
 | Automatic screensaver | Sensor, When it is, Limit | The condition, such as a CPU temperature above 80 |

@@ -372,6 +372,45 @@
                 "key": "customLine",
                 "equals": true
               }
+            },
+            {
+              "key": "fixedScale",
+              "type": "boolean",
+              "title": "Fixed chart scale",
+              "default": false,
+              "description": "Sets the bottom and top of the chart for this line instead of following its values. Lines in one unit share a scale.",
+              "visibleWhen": {
+                "key": "show",
+                "notEquals": "Value"
+              }
+            },
+            {
+              "key": "scaleMin",
+              "type": "number",
+              "title": "Chart minimum",
+              "default": 0,
+              "min": -100000,
+              "max": 100000,
+              "step": 0.01,
+              "input": "field",
+              "visibleWhen": {
+                "key": "fixedScale",
+                "equals": true
+              }
+            },
+            {
+              "key": "scaleMax",
+              "type": "number",
+              "title": "Chart maximum",
+              "default": 100,
+              "min": -100000,
+              "max": 100000,
+              "step": 0.01,
+              "input": "field",
+              "visibleWhen": {
+                "key": "fixedScale",
+                "equals": true
+              }
             }
           ]
         },

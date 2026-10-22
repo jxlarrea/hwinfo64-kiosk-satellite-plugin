@@ -89,11 +89,16 @@ final class Config {
         final String label;
         /** 0 takes the line's color from the look. */
         final int color;
+        /** The bottom and top of a fixed scale, NaN while the scale follows the values. */
+        final double min;
+        final double max;
 
-        Line(String reading, String label, int color) {
+        Line(String reading, String label, int color, double min, double max) {
             this.reading = reading;
             this.label = label;
             this.color = color;
+            this.min = min;
+            this.max = max;
         }
     }
 
@@ -247,7 +252,10 @@ final class Config {
                             highlight ? decimal(tile.get("alertAbove"), Double.NaN) : Double.NaN));
                 }
                 if ((show.equals("Chart line") || show.equals("Value and chart line")) && chart.size() < 3) {
-                    chart.add(new Line(reading, text(tile.get("label")), Boolean.TRUE.equals(tile.get("customLine")) ? color(tile.get("lineColor"), 0) : 0));
+                    double min = decimal(tile.get("scaleMin"), Double.NaN), max = decimal(tile.get("scaleMax"), Double.NaN);
+                    boolean fixed = Boolean.TRUE.equals(tile.get("fixedScale")) && max > min;
+                    chart.add(new Line(reading, text(tile.get("label")), Boolean.TRUE.equals(tile.get("customLine")) ? color(tile.get("lineColor"), 0) : 0,
+                            fixed ? min : Double.NaN, fixed ? max : Double.NaN));
                 }
             }
             panels.add(new Panel(text(row.get("title")), text(row.get("icon")), clamp((int) number(parseOr(text(row.get("columns")), 3), 3), 1, 6),
