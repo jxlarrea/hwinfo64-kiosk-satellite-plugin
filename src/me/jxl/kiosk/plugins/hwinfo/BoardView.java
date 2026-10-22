@@ -218,9 +218,9 @@ final class BoardView extends View {
                 box.chart.setEmpty();
                 Config.Panel panel = board.panels.get(box.panel);
                 if (!panel.chart.isEmpty()) {
-                    // The readings keep their rows on top and the chart takes the rest.
+                    // The readings keep their rows on top and the chart takes the rest, inset from the bottom like the sides.
                     float tiles = panel.tiles.isEmpty() ? 0 : box.grid.height() * box.rows / box.share;
-                    box.chart.set(x + pad, box.grid.top + tiles + (tiles > 0 ? pad / 2f : 0), x + columnWidth - pad, box.grid.bottom);
+                    box.chart.set(x + pad, box.grid.top + tiles + (tiles > 0 ? pad / 2f : 0), x + columnWidth - pad, box.grid.bottom - pad / 2f);
                     box.grid.bottom = box.grid.top + tiles;
                 }
                 y += height + gap;
