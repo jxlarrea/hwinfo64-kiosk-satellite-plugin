@@ -640,6 +640,14 @@
       "description": "Shows the unit beside each value along the sides of the charts."
     },
     {
+      "key": "smoothCharts",
+      "type": "boolean",
+      "title": "Smooth chart scrolling",
+      "group": "Screensaver appearance",
+      "default": true,
+      "description": "Scrolls the charts with the clock instead of moving them at each update. Turn it off to save a little power while the screensaver shows."
+    },
+    {
       "key": "autoSwitch",
       "type": "boolean",
       "title": "Switch screensaver automatically",

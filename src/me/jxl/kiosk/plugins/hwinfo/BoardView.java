@@ -305,8 +305,8 @@ final class BoardView extends View {
         if (still == null || stillBoard != current) record(current);
         canvas.drawPicture(still);
 
-        // The lines move a quarter pixel at a time, every display frame for a short chart. A hidden window draws
-        // nothing, which ends the loop until it shows again.
+        // The lines move with each update, or with Smooth chart scrolling a quarter pixel at a time, every display
+        // frame for a short chart. A hidden window draws nothing, which ends the loop until it shows again.
         long now = System.currentTimeMillis(), frame = Long.MAX_VALUE;
         for (Lines chart : lines) {
             int saved = chart.faded ? canvas.saveLayerAlpha(chart.clip, 128) : canvas.save();
@@ -318,6 +318,7 @@ final class BoardView extends View {
             frame = Math.min(frame, (long) (chart.span / Math.max(1, chart.width) / 4));
         }
         removeCallbacks(tick);
+        if (!current.look.smoothCharts) return;
         if (frame <= 16) postInvalidateOnAnimation();
         else if (frame != Long.MAX_VALUE) postDelayed(tick, frame);
     }

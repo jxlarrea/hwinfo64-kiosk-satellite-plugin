@@ -156,9 +156,11 @@ final class Config {
         final float chartScale;
         /** Whether the values along the charts show their unit. */
         final boolean chartUnits;
+        /** Whether the charts scroll every frame instead of at each update. */
+        final boolean smoothCharts;
 
         Look(String theme, boolean custom, int accent, int surface, int background, int text, int header, int label, float scale, float valueScale, float labelScale,
-                float chartScale, boolean chartUnits) {
+                float chartScale, boolean chartUnits, boolean smoothCharts) {
             this.theme = theme;
             this.custom = custom;
             this.accent = accent;
@@ -172,6 +174,7 @@ final class Config {
             this.labelScale = labelScale;
             this.chartScale = chartScale;
             this.chartUnits = chartUnits;
+            this.smoothCharts = smoothCharts;
         }
     }
 
@@ -269,7 +272,8 @@ final class Config {
                 color(settings.get("textColor"), 0xFFE8EAED), color(settings.get("headerColor"), 0xFFE8EAED),
                 color(settings.get("labelColor"), 0xFFB6BABF), (float) number(settings.get("textSize"), 100) / 100f,
                 (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f,
-                (float) number(settings.get("chartLabelSize"), 100) / 100f, Boolean.TRUE.equals(settings.get("chartUnits")));
+                (float) number(settings.get("chartLabelSize"), 100) / 100f, Boolean.TRUE.equals(settings.get("chartUnits")),
+                !Boolean.FALSE.equals(settings.get("smoothCharts")));
 
         autoSwitch = Boolean.TRUE.equals(settings.get("autoSwitch"));
         ruleReading = text(settings.get("ruleReading"));

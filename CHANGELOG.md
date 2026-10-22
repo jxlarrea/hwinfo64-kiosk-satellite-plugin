@@ -35,5 +35,5 @@
 - Add Chart label size.
 - Show the chart's values in the muted text color, with more room around the chart, without the time labels and with their unit only when Units on the chart scale is on.
 - Add Fixed chart scale with Chart minimum and Chart maximum to chart lines, so a chart can keep one scale instead of following its values.
-- Scroll the charts smoothly with the clock instead of jumping at every update. Each display frame draws only the chart lines over the rest of the screen, recorded once per update, and nothing draws while the screensaver is hidden. A chart keeps the room for its widest values, so a new scale no longer shifts its lines.
+- Add Smooth chart scrolling, on by default, to scroll the charts with the clock instead of jumping at every update. Each display frame draws only the chart lines over the rest of the screen, recorded once per update, and nothing draws while the screensaver is hidden. A chart keeps the room for its widest values, so a new scale no longer shifts its lines.
 - Move the screensaver's look into its own Screensaver appearance group, so Build sits right under Panels.
