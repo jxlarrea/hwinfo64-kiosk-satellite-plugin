@@ -119,6 +119,8 @@ final class Config {
         final int surface;
         final int background;
         final int text;
+        final int header;
+        final int label;
         /** Panel titles, header values and footers. */
         final float scale;
         /** The sensor values in the tiles. */
@@ -126,13 +128,15 @@ final class Config {
         /** The labels under the sensor values. */
         final float labelScale;
 
-        Look(String theme, boolean custom, int accent, int surface, int background, int text, float scale, float valueScale, float labelScale) {
+        Look(String theme, boolean custom, int accent, int surface, int background, int text, int header, int label, float scale, float valueScale, float labelScale) {
             this.theme = theme;
             this.custom = custom;
             this.accent = accent;
             this.surface = surface;
             this.background = background;
             this.text = text;
+            this.header = header;
+            this.label = label;
             this.scale = scale;
             this.valueScale = valueScale;
             this.labelScale = labelScale;
@@ -219,7 +223,8 @@ final class Config {
         this.panels = Collections.unmodifiableList(panels);
         look = new Look(text(settings.get("theme")).isEmpty() ? "Auto" : text(settings.get("theme")), Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
                 color(settings.get("panelColor"), 0xFF2A2B2F), color(settings.get("backgroundColor"), 0xFF202124),
-                color(settings.get("textColor"), 0xFFE8EAED), (float) number(settings.get("textSize"), 100) / 100f,
+                color(settings.get("textColor"), 0xFFE8EAED), color(settings.get("headerColor"), 0xFFE8EAED),
+                color(settings.get("labelColor"), 0xFFB6BABF), (float) number(settings.get("textSize"), 100) / 100f,
                 (float) number(settings.get("valueSize"), 100) / 100f, (float) number(settings.get("labelSize"), 100) / 100f);
 
         autoSwitch = Boolean.TRUE.equals(settings.get("autoSwitch"));

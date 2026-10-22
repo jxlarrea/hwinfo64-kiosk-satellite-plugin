@@ -39,6 +39,9 @@ final class BoardView extends View {
         int panel;
         int text;
         int muted;
+        /** Panel titles and the labels under the values. */
+        int header;
+        int label;
         int accent;
         int line;
         int alert;
@@ -141,11 +144,15 @@ final class BoardView extends View {
             palette.line = colors[5];
             palette.alert = colors[6];
         }
+        palette.header = palette.text;
+        palette.label = palette.muted;
         if (look.custom) {
             palette.background = look.background;
             palette.panel = look.surface;
             palette.text = look.text;
             palette.muted = withAlpha(look.text, 0.7f);
+            palette.header = look.header;
+            palette.label = look.label;
             palette.accent = look.accent;
             palette.line = withAlpha(look.text, 0.12f);
         }
@@ -306,7 +313,7 @@ final class BoardView extends View {
 
         text.setTypeface(theme.typeface(600));
         text.setTextSize(2.8f * u);
-        text.setColor(palette.text);
+        text.setColor(palette.header);
         CharSequence title = TextUtils.ellipsize(panel.title, text, Math.max(0, titleRight - x), TextUtils.TruncateAt.END);
         canvas.drawText(title, 0, title.length(), x, middle + 1f * u, text);
     }
@@ -369,7 +376,7 @@ final class BoardView extends View {
         if (hasLabel) {
             text.setTypeface(theme.typeface(500));
             text.setTextSize(labelSize);
-            text.setColor(palette.muted);
+            text.setColor(palette.label);
             CharSequence label = TextUtils.ellipsize(tile.label, text, width * 0.96f, TextUtils.TruncateAt.END);
             float labelWidth = text.measureText(label, 0, label.length());
             canvas.drawText(label, 0, label.length(), left + (width - labelWidth) / 2f, baseline + labelSize * 0.7f + labelSize * 0.8f, text);

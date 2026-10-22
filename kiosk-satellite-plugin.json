@@ -463,6 +463,30 @@
       }
     },
     {
+      "key": "headerColor",
+      "type": "color",
+      "title": "Header color",
+      "group": "Screensaver",
+      "default": "#E8EAED",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      },
+      "description": "The panel titles."
+    },
+    {
+      "key": "labelColor",
+      "type": "color",
+      "title": "Label color",
+      "group": "Screensaver",
+      "default": "#B6BABF",
+      "visibleWhen": {
+        "key": "customColors",
+        "equals": true
+      },
+      "description": "The labels under the sensor values."
+    },
+    {
       "key": "textSize",
       "type": "number",
       "title": "Text size",
