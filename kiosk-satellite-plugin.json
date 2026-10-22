@@ -328,6 +328,54 @@
           ]
         },
         {
+          "key": "chartReading1",
+          "type": "string",
+          "title": "Chart",
+          "choices": "plugin",
+          "emptyText": "Add a computer under Computers to pick its sensors.",
+          "description": "A sensor to follow over time in a chart under the panel's readings. A panel without readings shows only the chart."
+        },
+        {
+          "key": "chartReading2",
+          "type": "string",
+          "title": "Second chart line",
+          "choices": "plugin",
+          "emptyText": "Add a computer under Computers to pick its sensors.",
+          "visibleWhen": {
+            "key": "chartReading1",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "chartReading3",
+          "type": "string",
+          "title": "Third chart line",
+          "choices": "plugin",
+          "emptyText": "Add a computer under Computers to pick its sensors.",
+          "visibleWhen": {
+            "key": "chartReading2",
+            "notEmpty": true
+          }
+        },
+        {
+          "key": "chartMinutes",
+          "type": "select",
+          "title": "Chart history",
+          "options": [
+            "1",
+            "5",
+            "15",
+            "30",
+            "60"
+          ],
+          "default": "5",
+          "description": "Minutes the chart shows.",
+          "visibleWhen": {
+            "key": "chartReading1",
+            "notEmpty": true
+          }
+        },
+        {
           "key": "headerReading",
           "type": "string",
           "title": "Header sensor",

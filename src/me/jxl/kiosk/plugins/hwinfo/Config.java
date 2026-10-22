@@ -94,9 +94,12 @@ final class Config {
         final String footerLogo;
         final String footerIcon;
         final List<Tile> tiles;
+        /** Up to three sensors the panel's chart follows, empty without a chart. */
+        final List<String> chart;
+        final int chartMinutes;
 
         Panel(String title, String icon, int columns, boolean stack, String headerReading, String headerLabel,
-                String footerText, String footerLogo, String footerIcon, List<Tile> tiles) {
+                String footerText, String footerLogo, String footerIcon, List<Tile> tiles, List<String> chart, int chartMinutes) {
             this.title = title;
             this.icon = icon;
             this.columns = columns;
@@ -107,6 +110,8 @@ final class Config {
             this.footerLogo = footerLogo;
             this.footerIcon = footerIcon;
             this.tiles = tiles;
+            this.chart = chart;
+            this.chartMinutes = chartMinutes;
         }
     }
 
@@ -218,7 +223,8 @@ final class Config {
             }
             panels.add(new Panel(text(row.get("title")), text(row.get("icon")), clamp((int) number(parseOr(text(row.get("columns")), 3), 3), 1, 6),
                     Boolean.TRUE.equals(row.get("stack")), text(row.get("headerReading")), text(row.get("headerLabel")),
-                    text(row.get("footerText")), text(row.get("footerLogo")), text(row.get("footerIcon")), Collections.unmodifiableList(tiles)));
+                    text(row.get("footerText")), text(row.get("footerLogo")), text(row.get("footerIcon")), Collections.unmodifiableList(tiles),
+                    Collections.unmodifiableList(chart(row)), clamp((int) number(parseOr(text(row.get("chartMinutes")), 5), 5), 1, 60)));
         }
         this.panels = Collections.unmodifiableList(panels);
         look = new Look(text(settings.get("theme")).isEmpty() ? "Auto" : text(settings.get("theme")), Boolean.TRUE.equals(settings.get("customColors")), color(settings.get("accentColor"), 0xFF488284),
@@ -246,10 +252,22 @@ final class Config {
         for (Export export : exports) all.add(export.reading);
         for (Panel panel : panels) {
             if (!panel.headerReading.isEmpty()) all.add(panel.headerReading);
+            all.addAll(panel.chart);
             for (Tile tile : panel.tiles) all.add(tile.reading);
         }
         if (autoSwitch && !ruleReading.isEmpty()) all.add(ruleReading);
         return all;
+    }
+
+    /** The chart's sensors in order. A line only counts while the ones before it are set, the way the settings show them. */
+    private static List<String> chart(Map<String, Object> row) {
+        List<String> chart = new ArrayList<>();
+        for (String key : new String[] {"chartReading1", "chartReading2", "chartReading3"}) {
+            String reading = text(row.get(key));
+            if (reading.isEmpty()) break;
+            chart.add(reading);
+        }
+        return chart;
     }
 
     @SuppressWarnings("unchecked")

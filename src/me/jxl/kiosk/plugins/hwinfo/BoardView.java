@@ -28,6 +28,10 @@ final class BoardView extends View {
     private static final float LABEL = 1.3f;
     /** Space above a panel's title, in dp. Tighter than the card padding at the sides. */
     private static final int HEADER_TOP = 12;
+    /** How much of a panel a chart takes, counted in rows of readings. */
+    private static final float CHART_ROWS = 1.6f;
+    /** The second and third chart lines. The first takes the accent color. */
+    private static final int[] SERIES = {0xFFE8A33D, 0xFF9B7FE0};
 
     interface Logos {
         Path logo(String name);
@@ -65,9 +69,12 @@ final class BoardView extends View {
         final int panel;
         final RectF bounds = new RectF();
         final RectF grid = new RectF();
+        final RectF chart = new RectF();
         float header;
         float footer;
         int rows;
+        /** The panel's part of its column's free height: its rows of readings plus its chart. */
+        float share;
 
         Box(int panel) {
             this.panel = panel;
@@ -88,8 +95,15 @@ final class BoardView extends View {
         post(() -> {
             board = next;
             if (!next.sameLayout(laidOut)) layout();
-            invalidate();
+            // Nothing redraws while the window is hidden, such as with the screen off. It catches up once shown.
+            if (getWindowVisibility() == VISIBLE) invalidate();
         });
+    }
+
+    @Override
+    protected void onWindowVisibilityChanged(int visibility) {
+        super.onWindowVisibilityChanged(visibility);
+        if (visibility == VISIBLE) invalidate();
     }
 
     /** KS switched between light and dark. Main thread. */
@@ -175,6 +189,8 @@ final class BoardView extends View {
             }
             Box box = new Box(i);
             box.rows = Math.max(1, (panel.tiles.size() + panel.columns - 1) / panel.columns);
+            boolean chart = !panel.chart.isEmpty();
+            box.share = panel.tiles.isEmpty() ? (chart ? 2f : 1f) : box.rows + (chart ? CHART_ROWS : 0);
             box.header = theme.px(HEADER_TOP) + 5.2f * u;
             box.footer = hasFooter(panel) ? 5.4f * u : 0;
             columns.get(columns.size() - 1).add(box);
@@ -191,14 +207,22 @@ final class BoardView extends View {
             float fixed = 0, rows = 0;
             for (Box box : column) {
                 fixed += box.header + box.footer + pad;
-                rows += box.rows;
+                rows += box.share;
             }
             float free = Math.max(0, getHeight() - 2 * pad - gap * (column.size() - 1) - fixed);
             float y = pad;
             for (Box box : column) {
-                float height = box.header + box.footer + pad + free * box.rows / rows;
+                float height = box.header + box.footer + pad + free * box.share / rows;
                 box.bounds.set(x, y, x + columnWidth, y + height);
                 box.grid.set(x + pad / 2f, y + box.header, x + columnWidth - pad / 2f, y + height - box.footer - pad / 2f);
+                box.chart.setEmpty();
+                Config.Panel panel = board.panels.get(box.panel);
+                if (!panel.chart.isEmpty()) {
+                    // The readings keep their rows on top and the chart takes the rest.
+                    float tiles = panel.tiles.isEmpty() ? 0 : box.grid.height() * box.rows / box.share;
+                    box.chart.set(x + pad, box.grid.top + tiles + (tiles > 0 ? pad / 2f : 0), x + columnWidth - pad, box.grid.bottom);
+                    box.grid.bottom = box.grid.top + tiles;
+                }
                 y += height + gap;
             }
             x += columnWidth + gap;
@@ -269,6 +293,8 @@ final class BoardView extends View {
         canvas.drawRoundRect(box.bounds, radius, radius, fill);
         drawHeader(canvas, current, box, panel, u);
         drawTiles(canvas, current, box, panel);
+        Board.Chart chart = current.charts[box.panel];
+        if (chart != null && box.chart.height() > 0) drawChart(canvas, chart, box.chart, u);
         if (box.footer > 0) drawFooter(canvas, box, panel, u);
     }
 
@@ -381,6 +407,146 @@ final class BoardView extends View {
             float labelWidth = text.measureText(label, 0, label.length());
             canvas.drawText(label, 0, label.length(), left + (width - labelWidth) / 2f, baseline + labelSize * 0.7f + labelSize * 0.8f, text);
         }
+    }
+
+    /** A legend with each line's current value, then the lines over the chart's time span on faint guides. */
+    private void drawChart(Canvas canvas, Board.Chart chart, RectF area, float u) {
+        float legend = 2.1f * u;
+        text.setTypeface(theme.typeface(500));
+        text.setTextSize(legend);
+        float x = area.left, baseline = area.top + legend;
+        for (int i = 0; i < chart.series.size(); i++) {
+            Board.Series series = chart.series.get(i);
+            int color = seriesColor(i);
+            double latest = series.latest();
+            String value = Double.isNaN(latest) ? "–" : Units.describe(latest, series.unit);
+            // An entry that does not fit the rest of the row starts the next one.
+            float entry = legend + text.measureText(series.name) + legend * 0.4f + text.measureText(value);
+            if (x > area.left && x + entry > area.right) {
+                x = area.left;
+                baseline += legend * 1.4f;
+            }
+            fill.setColor(color);
+            canvas.drawCircle(x + legend * 0.35f, baseline - legend * 0.35f, legend * 0.3f, fill);
+            x += legend;
+            text.setColor(palette.label);
+            canvas.drawText(series.name, x, baseline, text);
+            x += text.measureText(series.name) + legend * 0.4f;
+            text.setColor(palette.text);
+            canvas.drawText(value, x, baseline, text);
+            x += text.measureText(value) + legend * 1.2f;
+        }
+
+        RectF plot = new RectF(area.left, baseline + legend * 0.9f, area.right, area.bottom - legend * 0.3f);
+        if (plot.height() <= legend) return;
+        // Lines in one unit share a scale with its values marked. Lines in different units each fill the height on
+        // their own scale, since no single axis reads true for all of them.
+        String unit = chart.series.get(0).unit;
+        boolean shared = true;
+        for (Board.Series series : chart.series) shared &= series.unit.equals(unit);
+        double[] lows = new double[chart.series.size()], highs = new double[chart.series.size()];
+        boolean any = false;
+        for (int i = 0; i < chart.series.size(); i++) {
+            double[] range = range(chart.series.get(i).values);
+            lows[i] = range[0];
+            highs[i] = range[1];
+            any |= !Double.isNaN(range[0]);
+        }
+        if (!any) return;
+        if (shared) {
+            double low = Double.POSITIVE_INFINITY, high = Double.NEGATIVE_INFINITY;
+            for (int i = 0; i < lows.length; i++) {
+                if (Double.isNaN(lows[i])) continue;
+                low = Math.min(low, lows[i]);
+                high = Math.max(high, highs[i]);
+            }
+            java.util.Arrays.fill(lows, low);
+            java.util.Arrays.fill(highs, high);
+        }
+
+        fill.setColor(palette.line);
+        float hair = Math.max(1, theme.px(1));
+        text.setTextSize(legend * 0.85f);
+        text.setColor(palette.muted);
+        for (int i = 0; i < 3; i++) {
+            float y = plot.top + plot.height() * i / 2f;
+            canvas.drawRect(plot.left, y, plot.right, y + hair, fill);
+            if (i == 1 || !shared) continue;
+            String mark = Units.describe(i == 0 ? highs[0] : lows[0], unit);
+            canvas.drawText(mark, plot.right - text.measureText(mark), i == 0 ? y + legend * 0.95f : y - legend * 0.3f, text);
+        }
+
+        float stroke = Math.max(theme.px(2), 0.3f * u);
+        double total = Math.max(1, chart.end - chart.start);
+        for (int i = chart.series.size() - 1; i >= 0; i--) {
+            Board.Series series = chart.series.get(i);
+            if (Double.isNaN(lows[i])) continue;
+            double low = lows[i], high = highs[i];
+            Path line = new Path();
+            Path area0 = i == 0 ? new Path() : null;
+            boolean drawing = false;
+            float firstX = 0, lastX = 0;
+            for (int s = 0; s < series.values.length; s++) {
+                double value = series.values[s];
+                if (Double.isNaN(value)) {
+                    if (area0 != null && drawing) closeArea(area0, lastX, firstX, plot.bottom);
+                    drawing = false;
+                    continue;
+                }
+                float px = plot.left + (float) ((series.times[s] - chart.start) / total) * plot.width();
+                float py = plot.bottom - (float) ((value - low) / (high - low)) * plot.height();
+                if (!drawing) {
+                    line.moveTo(px, py);
+                    if (area0 != null) area0.moveTo(px, py);
+                    firstX = px;
+                } else {
+                    line.lineTo(px, py);
+                    if (area0 != null) area0.lineTo(px, py);
+                }
+                lastX = px;
+                drawing = true;
+            }
+            if (area0 != null) {
+                if (drawing) closeArea(area0, lastX, firstX, plot.bottom);
+                fill.setShader(new android.graphics.LinearGradient(0, plot.top, 0, plot.bottom,
+                        withAlpha(seriesColor(0), 0.22f), withAlpha(seriesColor(0), 0f), android.graphics.Shader.TileMode.CLAMP));
+                fill.setColor(Color.BLACK);
+                canvas.drawPath(area0, fill);
+                fill.setShader(null);
+            }
+            Paint pen = new Paint(Paint.ANTI_ALIAS_FLAG);
+            pen.setStyle(Paint.Style.STROKE);
+            pen.setStrokeWidth(stroke);
+            pen.setStrokeJoin(Paint.Join.ROUND);
+            pen.setStrokeCap(Paint.Cap.ROUND);
+            pen.setColor(seriesColor(i));
+            canvas.drawPath(line, pen);
+        }
+    }
+
+    /** The lowest and highest value with a little room around them, or NaN for a line without values. */
+    private static double[] range(double[] values) {
+        double low = Double.POSITIVE_INFINITY, high = Double.NEGATIVE_INFINITY;
+        for (double value : values) {
+            if (Double.isNaN(value)) continue;
+            low = Math.min(low, value);
+            high = Math.max(high, value);
+        }
+        if (low == Double.POSITIVE_INFINITY) return new double[] {Double.NaN, Double.NaN};
+        // A span for a line that never moved.
+        double span = high - low;
+        if (span < 1e-6) span = Math.max(1, Math.abs(high) * 0.1);
+        return new double[] {low - span * 0.1, high + span * 0.1};
+    }
+
+    private static void closeArea(Path area, float lastX, float firstX, float bottom) {
+        area.lineTo(lastX, bottom);
+        area.lineTo(firstX, bottom);
+        area.close();
+    }
+
+    private int seriesColor(int index) {
+        return index == 0 ? palette.accent : SERIES[(index - 1) % SERIES.length];
     }
 
     /** A hairline, then the logo or icon and the text, quiet like a KS row's description. */

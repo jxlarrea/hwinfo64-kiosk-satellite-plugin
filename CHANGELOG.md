@@ -30,3 +30,4 @@
 - Show every sensor value and every label at one size, so Value size and Label size change them all alike.
 - Bring the panel titles closer to the top of their panels.
 - Add Header color and Label color to Custom colors.
+- Add a chart to panels that follows up to three sensors over the last 1 to 60 minutes. It draws only while the screensaver shows.

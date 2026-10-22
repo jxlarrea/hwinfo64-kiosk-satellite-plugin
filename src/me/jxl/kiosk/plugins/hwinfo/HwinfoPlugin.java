@@ -41,7 +41,8 @@ public final class HwinfoPlugin implements KioskPlugin {
     static final String SCREENSAVER = "board";
     static final String MODE = "plugin:" + PLUGIN_ID + ":" + SCREENSAVER;
     /** Fields that take any sensor, combined ones included. */
-    static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading", "ruleReading"};
+    static final String[] READING_FIELDS = {"exports.reading", "panels.tiles.reading", "panels.headerReading",
+        "panels.chartReading1", "panels.chartReading2", "panels.chartReading3", "ruleReading"};
     /** The sensors a combined sensor is made of, which cannot be combined ones themselves. */
     static final String PART_FIELD = "combined.sensors.reading";
     static final String COMPUTER_FIELD = "combined.computer";
@@ -92,6 +93,10 @@ public final class HwinfoPlugin implements KioskPlugin {
     /** Whether the sensor pickers are on, null before the first poll and once KS cannot turn them off. */
     private Boolean pickersOn;
     private boolean pickersFixed;
+    /** Recent samples of every sensor a chart follows, as time and value pairs, oldest first. Worker thread. */
+    private final Map<String, java.util.ArrayDeque<double[]>> history = new HashMap<>();
+    /** The name and unit a chart shows for a sensor, kept while its computer is off. */
+    private final Map<String, String[]> chartNames = new HashMap<>();
     /** The combined sensors as of the last poll, by their ID. */
     private Map<String, HwinfoSnapshot.Reading> combined = new HashMap<>();
     /** A settings page shows this plugin somewhere, so the values in its sensor pickers are worth keeping fresh. */
@@ -252,8 +257,12 @@ public final class HwinfoPlugin implements KioskPlugin {
         if (catalogChanged || !choicesPublished || settingsOpen && now - choicesAt >= CHOICES_REFRESH_MS) publishChoices();
         switchPickers();
         publishEntities(current);
-        board = buildBoard(current);
-        for (BoardView view : views) view.show(board);
+        record(current);
+        // Nothing draws while the screensaver is hidden, so the board waits for a view to show it.
+        if (!views.isEmpty()) {
+            board = buildBoard(current);
+            for (BoardView view : views) view.show(board);
+        }
         evaluateRule(current);
         publishStatus();
     }
@@ -646,7 +655,7 @@ public final class HwinfoPlugin implements KioskPlugin {
     private Board emptyBoard(Config current) {
         Board.Value[][] tiles = new Board.Value[current.panels.size()][];
         for (int i = 0; i < tiles.length; i++) tiles[i] = new Board.Value[current.panels.get(i).tiles.size()];
-        return new Board(current.look, current.panels, tiles, new Board.Value[current.panels.size()]);
+        return new Board(current.look, current.panels, tiles, new Board.Value[current.panels.size()], new Board.Chart[current.panels.size()]);
     }
 
     private Board buildBoard(Config current) {
@@ -662,8 +671,55 @@ public final class HwinfoPlugin implements KioskPlugin {
                 HwinfoSnapshot.Reading reading = resolve(panel.headerReading);
                 if (reading != null) empty.headers[p] = new Board.Value(reading.value, reading.unit);
             }
+            if (!panel.chart.isEmpty()) empty.charts[p] = chart(panel);
         }
         return empty;
+    }
+
+    /** A board built now on the worker, the way a screensaver view would get it. For tests. */
+    Board freshBoard() throws Exception {
+        return worker.submit(() -> buildBoard(config)).get();
+    }
+
+    // Charts.
+
+    /** Adds this poll's value of every charted sensor and forgets what no chart reaches back to anymore. */
+    private void record(Config current) {
+        long now = System.currentTimeMillis();
+        Map<String, Integer> minutes = new HashMap<>();
+        for (Config.Panel panel : current.panels) {
+            for (String id : panel.chart) minutes.merge(id, panel.chartMinutes, Math::max);
+        }
+        history.keySet().retainAll(minutes.keySet());
+        chartNames.keySet().retainAll(minutes.keySet());
+        for (Map.Entry<String, Integer> entry : minutes.entrySet()) {
+            HwinfoSnapshot.Reading reading = resolve(entry.getKey());
+            if (reading != null) chartNames.put(entry.getKey(), new String[] {reading.label, reading.unit});
+            java.util.ArrayDeque<double[]> samples = history.computeIfAbsent(entry.getKey(), id -> new java.util.ArrayDeque<>());
+            samples.addLast(new double[] {now, reading == null ? Double.NaN : reading.value});
+            long oldest = now - entry.getValue() * 60_000L;
+            while (!samples.isEmpty() && samples.peekFirst()[0] < oldest) samples.removeFirst();
+        }
+    }
+
+    private Board.Chart chart(Config.Panel panel) {
+        long end = System.currentTimeMillis(), start = end - panel.chartMinutes * 60_000L;
+        List<Board.Series> series = new ArrayList<>();
+        for (String id : panel.chart) {
+            List<double[]> kept = new ArrayList<>();
+            for (double[] sample : history.getOrDefault(id, new java.util.ArrayDeque<double[]>())) {
+                if (sample[0] >= start) kept.add(sample);
+            }
+            long[] times = new long[kept.size()];
+            double[] values = new double[kept.size()];
+            for (int i = 0; i < kept.size(); i++) {
+                times[i] = (long) kept.get(i)[0];
+                values[i] = kept.get(i)[1];
+            }
+            String[] name = chartNames.getOrDefault(id, new String[] {id.startsWith(Config.Combined.PREFIX) ? id.substring(Config.Combined.PREFIX.length()) : "Sensor", ""});
+            series.add(new Board.Series(name[0], name[1], times, values));
+        }
+        return new Board.Chart(series, start, end);
     }
 
     private void publishScreensaver() {
@@ -674,6 +730,15 @@ public final class HwinfoPlugin implements KioskPlugin {
                     BoardView view = new BoardView(context, theme, HwinfoPlugin.this::logo);
                     views.add(view);
                     view.show(board);
+                    // The board is only kept current while a view shows it, so this one asks for a fresh one.
+                    try {
+                        worker.execute(() -> {
+                            board = buildBoard(config);
+                            view.show(board);
+                        });
+                    } catch (java.util.concurrent.RejectedExecutionException stopping) {
+                        // The plugin is stopping. KS removes the view next.
+                    }
                     return view;
                 }
 

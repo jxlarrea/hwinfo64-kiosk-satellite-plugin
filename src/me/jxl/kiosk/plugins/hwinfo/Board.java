@@ -14,17 +14,51 @@ final class Board {
         }
     }
 
+    /** One line of a chart: its samples over the chart's time span, oldest first. NaN marks a gap. */
+    static final class Series {
+        final String name;
+        final String unit;
+        final long[] times;
+        final double[] values;
+
+        Series(String name, String unit, long[] times, double[] values) {
+            this.name = name;
+            this.unit = unit;
+            this.times = times;
+            this.values = values;
+        }
+
+        double latest() {
+            return values.length == 0 ? Double.NaN : values[values.length - 1];
+        }
+    }
+
+    static final class Chart {
+        final List<Series> series;
+        final long start;
+        final long end;
+
+        Chart(List<Series> series, long start, long end) {
+            this.series = series;
+            this.start = start;
+            this.end = end;
+        }
+    }
+
     final Config.Look look;
     final List<Config.Panel> panels;
     /** Per panel, per tile. Null where the reading is missing, such as while its computer is off. */
     final Value[][] tiles;
     final Value[] headers;
+    /** Per panel, null for a panel without a chart. */
+    final Chart[] charts;
 
-    Board(Config.Look look, List<Config.Panel> panels, Value[][] tiles, Value[] headers) {
+    Board(Config.Look look, List<Config.Panel> panels, Value[][] tiles, Value[] headers, Chart[] charts) {
         this.look = look;
         this.panels = panels;
         this.tiles = tiles;
         this.headers = headers;
+        this.charts = charts;
     }
 
     boolean offline(int panel) {

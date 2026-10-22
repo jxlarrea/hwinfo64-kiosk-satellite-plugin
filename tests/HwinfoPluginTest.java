@@ -159,6 +159,7 @@ public final class HwinfoPluginTest {
         check(Units.metadata("other", "FPS").get("deviceClass").equals(""), "no class for frame rates");
     }
 
+    @SuppressWarnings("unchecked")
     static void configReadsRows() {
         Map<String, Object> settings = settings(0);
         Config config = Config.of(settings);
@@ -170,6 +171,13 @@ public final class HwinfoPluginTest {
         check(config.look.valueScale == 1.5f && config.look.labelScale == 0.8f && config.look.scale == 1f, "text, value and label sizes apart");
         check(!config.look.custom && config.look.accent == 0xFFFFC933, "theme colors unless custom, with the saved accent kept");
         check(config.ruleValue == 60 && Config.decimal("1,5", 0) == 1.5 && Double.isNaN(Config.decimal("sixty", Double.NaN)), "typed limits");
+        check(config.panels.get(0).chart.size() == 2 && config.panels.get(0).chartMinutes == 1, "chart lines and history");
+        Map<String, Object> gap = new LinkedHashMap<>(((List<Map<String, Object>>) settings.get("panels")).get(0));
+        gap.put("chartReading2", "");
+        gap.put("chartReading3", "TESTPC/f0000501.0.6000000");
+        Map<String, Object> gapped = new HashMap<>(settings);
+        gapped.put("panels", Collections.singletonList(gap));
+        check(Config.of(gapped).panels.get(0).chart.size() == 1, "a third line needs a second one");
         check(config.readings().contains("TESTPC/f0000ff0.0.8000000"), "rule reading counts as used");
     }
 
@@ -257,6 +265,10 @@ public final class HwinfoPluginTest {
         panel.put("columns", "3");
         panel.put("stack", false);
         panel.put("tiles", Collections.singletonList(tile));
+        panel.put("chartReading1", "TESTPC/f0000501.0.1000000");
+        panel.put("chartReading2", "combined/Max clock");
+        panel.put("chartReading3", "");
+        panel.put("chartMinutes", "1");
         panel.put("headerReading", "");
         panel.put("headerLabel", "");
         panel.put("footerText", "");
@@ -315,6 +327,14 @@ public final class HwinfoPluginTest {
             check(Boolean.FALSE.equals(host.binary.get("rule_active")), "rule sensor off again");
 
             check(host.pickersOff.isEmpty(), "pickers on while the computer answers");
+
+            // A chart follows its sensors over time, combined ones included.
+            waitFor(() -> plugin.freshBoard().charts[0].series.get(0).values.length >= 3, "three chart samples");
+            Board.Chart chart = plugin.freshBoard().charts[0];
+            check(chart.series.size() == 2 && chart.end - chart.start == 60_000, "two lines over one minute");
+            check(chart.series.get(0).latest() == 47.625 && "CPU (Tctl/Tdie)".equals(chart.series.get(0).name), "the temperature line");
+            check(chart.series.get(1).latest() == 5200 && "Max clock".equals(chart.series.get(1).name), "the combined line");
+            check(chart.series.get(0).times[0] >= chart.start, "only samples inside the span");
 
             // The Overview tile goes away with its setting and comes back.
             waitFor(() -> "on|1 of 1 PC online".equals(host.tile), "the Overview tile");
@@ -380,10 +400,10 @@ public final class HwinfoPluginTest {
     }
 
     interface Condition {
-        boolean met();
+        boolean met() throws Exception;
     }
 
-    static void waitFor(Condition condition, String what) throws InterruptedException {
+    static void waitFor(Condition condition, String what) throws Exception {
         long end = System.currentTimeMillis() + 8000;
         while (System.currentTimeMillis() < end) {
             if (condition.met()) return;
