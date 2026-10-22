@@ -69,9 +69,13 @@ Sensors are saved by the PC's own name and HWiNFO's sensor IDs, so they survive 
 
 A combined sensor shows up under **Combined sensors** at the top of every sensor picker, so a panel, Home Assistant or the automatic screensaver can use it like any other sensor. It takes the unit of its first sensor and leaves out sensors in another unit, so a sum of watts never adds a load percentage. It has no value while none of its sensors answers.
 
-**Highest core clock.** Add a combined sensor named **Max core clock**, set **Combine with** to **Maximum** and **Sensors** to **Match a name**. Pick the computer and type `Core * Effective Clock` as the name. Every core and thread clock counts, while **Average Effective Clock** and the GPU's clock don't.
+**Highest core clock.** Add a combined sensor named **Max core clock**, set **Combine with** to **Maximum** and **Sensors** to **Match a name**. Pick the computer and type `Core * Effective Clock` in **Match sensor name**. Every core and thread clock counts, while **Average Effective Clock** and the GPU's clock don't.
+
+**Load of each CCD.** On a 16 core Ryzen, cores 0 to 7 sit on CCD0 and 8 to 15 on CCD1. Add a combined sensor named **CCD0 load** with **Combine with** set to **Average**, **Sensors** set to **Match a name** and `Core {0-7} T* Utility` in **Match sensor name**. Add **CCD1 load** the same way with `Core {8-15} T* Utility`. Each one averages the 16 threads of its CCD.
 
 **Total power of two UPSes.** Add a combined sensor named **Total power**, set **Combine with** to **Sum** and **Sensors** to **Pick them**. Add the **UPS Load** sensor in watts of each UPS.
+
+In **Match sensor name**, `*` stands for any text and braces for a whole number from a range or a list, such as `{0-7}` or `{0,2,4}`. The whole sensor name has to match, ignoring case.
 
 Tiles that show the minimum, maximum or average combine the same statistic of each sensor, such as the highest of their maximums.
 

@@ -336,14 +336,56 @@ public final class HwinfoPlugin implements KioskPlugin {
         return function.equals("Average") ? out / values.length : out;
     }
 
-    /** "Core * Effective Clock" matches whole names, any text in place of each star, ignoring case. */
+    /**
+     * Matches whole sensor names, ignoring case. A star stands for any text, as in "Core * Effective Clock", and
+     * braces for a whole number from a range or a list, as in "Core {0-7} T* Utility" or "Core {0,2,4} Clock".
+     * Braces that hold anything else are plain text.
+     */
     static Pattern glob(String pattern) {
         StringBuilder regex = new StringBuilder();
-        for (String part : pattern.trim().split("\\*", -1)) {
-            if (regex.length() > 0 || pattern.trim().startsWith("*")) regex.append(".*");
-            if (!part.isEmpty()) regex.append(Pattern.quote(part));
+        StringBuilder text = new StringBuilder();
+        String source = pattern.trim();
+        for (int i = 0; i < source.length(); i++) {
+            char c = source.charAt(i);
+            String numbers = null;
+            int close = c == '{' ? source.indexOf('}', i) : -1;
+            if (close > i) numbers = numbers(source.substring(i + 1, close));
+            if (c != '*' && numbers == null) {
+                text.append(c);
+                continue;
+            }
+            if (text.length() > 0) regex.append(Pattern.quote(text.toString()));
+            text.setLength(0);
+            if (c == '*') {
+                regex.append(".*");
+            } else {
+                regex.append(numbers);
+                i = close;
+            }
         }
+        if (text.length() > 0) regex.append(Pattern.quote(text.toString()));
         return Pattern.compile(regex.toString(), Pattern.CASE_INSENSITIVE);
+    }
+
+    /** "0-7" or "0,2,4" or a mix such as "0-3,8" as a regex that takes exactly those numbers, else null. */
+    private static String numbers(String inside) {
+        java.util.TreeSet<Integer> wanted = new java.util.TreeSet<>();
+        for (String item : inside.split(",", -1)) {
+            String[] ends = item.trim().split("-", -1);
+            try {
+                int from = Integer.parseInt(ends[0].trim());
+                int to = ends.length == 2 ? Integer.parseInt(ends[1].trim()) : from;
+                if (ends.length > 2 || from < 0 || to < from || to - from > 999) return null;
+                for (int n = from; n <= to; n++) wanted.add(n);
+            } catch (NumberFormatException error) {
+                return null;
+            }
+        }
+        if (wanted.isEmpty() || wanted.size() > 1000) return null;
+        StringBuilder out = new StringBuilder("(?:");
+        // Longest first, so 15 is tried before 1.
+        for (Integer n : wanted.descendingSet()) out.append(out.length() > 3 ? "|" : "").append(n);
+        return out.append(')').toString();
     }
 
     /** The computer a name pattern looks at: the one picked, else the first that answers. */

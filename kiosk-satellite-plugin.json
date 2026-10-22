@@ -151,13 +151,13 @@
         {
           "key": "pattern",
           "type": "string",
-          "title": "Name",
+          "title": "Match sensor name",
           "required": true,
           "visibleWhen": {
             "key": "source",
             "equals": "Match a name"
           },
-          "description": "The sensors whose name matches, where * stands for any text, such as Core * Effective Clock."
+          "description": "The sensors whose name matches. * stands for any text and {0-7} for any number in a range, such as Core * Effective Clock or Core {0-7} T* Utility."
         },
         {
           "key": "unit",

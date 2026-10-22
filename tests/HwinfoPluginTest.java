@@ -189,6 +189,20 @@ public final class HwinfoPluginTest {
         check(HwinfoPlugin.glob("ups load").matcher("UPS Load").matches(), "case does not matter");
         check(HwinfoPlugin.glob("*Clock").matcher("GPU Clock").matches() && HwinfoPlugin.glob("GPU*").matcher("GPU Clock").matches(), "stars at either end");
         check(HwinfoPlugin.glob("Load (W)").matcher("Load (W)").matches(), "other characters are plain text");
+        // The two CCDs of a 16 core Ryzen, two threads per core.
+        java.util.regex.Pattern ccd0 = HwinfoPlugin.glob("Core {0-7} T* Utility"), ccd1 = HwinfoPlugin.glob("Core {8-15} T* Utility");
+        int first = 0, second = 0;
+        for (int core = 0; core < 16; core++) {
+            for (int thread = 0; thread < 2; thread++) {
+                String name = "Core " + core + " T" + thread + " Utility";
+                check(ccd0.matcher(name).matches() != ccd1.matcher(name).matches(), "each thread in one CCD: " + name);
+                if (ccd0.matcher(name).matches()) first++; else second++;
+            }
+        }
+        check(first == 16 && second == 16, "16 threads per CCD");
+        check(!ccd1.matcher("Core 1 T0 Utility").matches() && !ccd1.matcher("Core 16 T0 Utility").matches(), "only the numbers in the range");
+        check(HwinfoPlugin.glob("Core {0,2,4} Clock").matcher("Core 2 Clock").matches() && !HwinfoPlugin.glob("Core {0,2,4} Clock").matcher("Core 3 Clock").matches(), "a list of numbers");
+        check(HwinfoPlugin.glob("Fan {a}").matcher("Fan {a}").matches() && HwinfoPlugin.glob("Fan {9-2}").matcher("Fan {9-2}").matches(), "other braces are plain text");
         check(HwinfoPlugin.apply("Average", new double[] {2, 4}) == 3 && HwinfoPlugin.apply("Minimum", new double[] {2, 4}) == 2, "functions");
     }
 
