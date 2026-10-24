@@ -85,9 +85,13 @@ final class BoardView extends View {
         final List<Paint> pens = new ArrayList<>();
         Path area;
         Paint areaPaint;
-        long recorded;
-        long span;
-        float width;
+        /**
+         * How long one scroll step takes in milliseconds and the whole pixels it moves. Steps count from 1970, so
+         * every frame and every update moves the lines by the same amount.
+         */
+        double step;
+        int stepPixels;
+        long recordedStep;
         boolean faded;
     }
 
@@ -310,21 +314,23 @@ final class BoardView extends View {
         if (still == null || stillBoard != current) record(current);
         canvas.drawPicture(still);
 
-        // The lines move with each update, or with Smooth chart scrolling a pixel at a time and at most ten times a
-        // second. A hidden window draws nothing, which ends the loop until it shows again.
+        // The lines move with each update, or with Smooth chart scrolling in whole pixel steps at most ten times a
+        // second, each drawn when it falls due. A hidden window draws nothing, which ends the loop until it shows again.
         long now = System.currentTimeMillis(), frame = Long.MAX_VALUE;
         for (Lines chart : lines) {
             int saved = chart.faded ? canvas.saveLayerAlpha(chart.clip, 128) : canvas.save();
             canvas.clipRect(chart.clip);
-            canvas.translate(-(float) (now - chart.recorded) / chart.span * chart.width, 0);
+            long step = (long) Math.floor(now / chart.step);
+            canvas.translate(-(step - chart.recordedStep) * chart.stepPixels, 0);
             if (chart.area != null) canvas.drawPath(chart.area, chart.areaPaint);
             for (int i = 0; i < chart.paths.size(); i++) canvas.drawPath(chart.paths.get(i), chart.pens.get(i));
             canvas.restoreToCount(saved);
-            frame = Math.min(frame, Math.max(SCROLL_FRAME_MS, (long) (chart.span / Math.max(1, chart.width))));
+            frame = Math.min(frame, (long) Math.ceil((step + 1) * chart.step) - now);
         }
         removeCallbacks(tick);
         if (!current.look.smoothCharts) return;
-        if (frame != Long.MAX_VALUE) postDelayed(tick, frame);
+        // A millisecond late, so the frame never lands just before its step.
+        if (frame != Long.MAX_VALUE) postDelayed(tick, Math.max(0, frame) + 1);
     }
 
     /** Records the screen without its chart lines, which [onDraw] adds each frame. */
@@ -588,14 +594,15 @@ final class BoardView extends View {
         float stroke = Math.max(theme.px(2), 0.3f * u);
         double total = Math.max(1, chart.span);
         Lines moving = new Lines();
-        moving.recorded = System.currentTimeMillis();
-        moving.span = Math.max(1, chart.span);
-        moving.width = plot.width();
+        double perPixel = total / Math.max(1, plot.width());
+        moving.stepPixels = (int) Math.max(1, Math.ceil(SCROLL_FRAME_MS / perPixel));
+        moving.step = moving.stepPixels * perPixel;
+        moving.recordedStep = (long) Math.floor(System.currentTimeMillis() / moving.step);
         moving.faded = fading;
         // Lines run off both ends as they scroll and past a fixed scale's edge.
         moving.clip.set(plot.left, plot.top - stroke, plot.right, plot.bottom + stroke);
         lines.add(moving);
-        long start = moving.recorded - chart.lag - chart.span;
+        double start = moving.recordedStep * moving.step - chart.lag - chart.span;
         for (int i = chart.series.size() - 1; i >= 0; i--) {
             Board.Series series = chart.series.get(i);
             double[] scale = scales[scaleOf[i]];
