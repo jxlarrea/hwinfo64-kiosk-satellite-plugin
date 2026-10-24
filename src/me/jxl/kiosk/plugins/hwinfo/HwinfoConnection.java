@@ -6,11 +6,17 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
-/** One TCP connection to a HWiNFO server. Not thread safe: one poller owns it. */
+/**
+ * Reads a HWiNFO server over a fresh TCP connection for every poll. HWiNFO answers one client at a
+ * time and waits on an idle connection forever, so a kiosk that drops off the network while holding
+ * one would lock out every client until HWiNFO restarts. Not thread safe: one poller owns it.
+ */
 final class HwinfoConnection implements Closeable {
     static final int CONNECT_TIMEOUT_MS = 2500;
     static final int READ_TIMEOUT_MS = 6000;
+    static final String BUSY = "HWiNFO took the connection but did not answer. It answers one device at a time, so another one may hold it. Restart HWiNFO if this does not clear.";
 
     private final String address;
     private final int port;
@@ -25,34 +31,32 @@ final class HwinfoConnection implements Closeable {
         this.port = port;
     }
 
-    /** Reads every sensor, connecting first if needed. Closes the connection when anything goes wrong. */
+    /** Connects, reads every sensor and closes the connection again, so HWiNFO is free for other clients. */
     HwinfoSnapshot poll() throws IOException {
         try {
-            if (socket == null) open();
+            open();
             byte[] body = exchange(HwinfoProtocol.COMMAND_SENSORS);
             return HwinfoProtocol.parseSensors(body, host, version);
-        } catch (IOException | RuntimeException error) {
+        } catch (SocketTimeoutException error) {
+            if (socket == null || !socket.isConnected()) throw error;
+            throw new IOException(BUSY, error);
+        } catch (RuntimeException error) {
+            throw new IOException(error.getMessage(), error);
+        } finally {
             close();
-            throw error instanceof IOException ? (IOException) error : new IOException(error.getMessage(), error);
         }
     }
 
     private void open() throws IOException {
-        Socket next = new Socket();
-        try {
-            next.connect(new InetSocketAddress(address, port), CONNECT_TIMEOUT_MS);
-            next.setSoTimeout(READ_TIMEOUT_MS);
-            next.setTcpNoDelay(true);
-            socket = next;
-            in = new DataInputStream(next.getInputStream());
-            out = next.getOutputStream();
-            String[] info = HwinfoProtocol.parseInfo(exchange(HwinfoProtocol.COMMAND_INFO));
-            host = info[0];
-            version = info[1];
-        } catch (IOException | RuntimeException error) {
-            close();
-            throw error;
-        }
+        socket = new Socket();
+        socket.connect(new InetSocketAddress(address, port), CONNECT_TIMEOUT_MS);
+        socket.setSoTimeout(READ_TIMEOUT_MS);
+        socket.setTcpNoDelay(true);
+        in = new DataInputStream(socket.getInputStream());
+        out = socket.getOutputStream();
+        String[] info = HwinfoProtocol.parseInfo(exchange(HwinfoProtocol.COMMAND_INFO));
+        host = info[0];
+        version = info[1];
     }
 
     private byte[] exchange(int command) throws IOException {

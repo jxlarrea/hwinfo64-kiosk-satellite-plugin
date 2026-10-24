@@ -38,3 +38,8 @@
 - Add Smooth chart scrolling, on by default, to scroll the charts with the clock instead of jumping at every update. Each display frame draws only the chart lines over the rest of the screen, recorded once per update, and nothing draws while the screensaver is hidden. A chart keeps the room for its widest values, so a new scale no longer shifts its lines.
 - Show a panel with a chart in the README screenshots.
 - Move the screensaver's look into its own Screensaver appearance group, so Build sits right under Panels.
+
+### Fixed
+
+- Open a new connection to HWiNFO for every update and close it right after. HWiNFO answers one device at a time and waits on an idle connection forever, so a kiosk that lost its network while connected locked every device out until HWiNFO restarted. Several kiosks can now read the same PC.
+- Say that HWiNFO is busy with another device when it takes the connection but does not answer, instead of pointing at the firewall.
