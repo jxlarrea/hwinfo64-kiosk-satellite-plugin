@@ -64,6 +64,11 @@ final class BoardView extends View {
     /** One size for every value and one for every label on the screen, so a small tile and a large one read alike. */
     private float valueSize;
     private float labelSize;
+    /**
+     * The shortest time between two frames of a scrolling chart. KS composites the screensaver as a texture, so every
+     * frame costs a fixed amount of CPU however little it draws.
+     */
+    private static final long SCROLL_FRAME_MS = 100;
     /** Redraws the charts as they scroll. */
     private final Runnable tick = this::invalidate;
     /** Everything but the chart lines, recorded once per board so a frame that only scrolls them stays cheap. */
@@ -305,8 +310,8 @@ final class BoardView extends View {
         if (still == null || stillBoard != current) record(current);
         canvas.drawPicture(still);
 
-        // The lines move with each update, or with Smooth chart scrolling a quarter pixel at a time, every display
-        // frame for a short chart. A hidden window draws nothing, which ends the loop until it shows again.
+        // The lines move with each update, or with Smooth chart scrolling a pixel at a time and at most ten times a
+        // second. A hidden window draws nothing, which ends the loop until it shows again.
         long now = System.currentTimeMillis(), frame = Long.MAX_VALUE;
         for (Lines chart : lines) {
             int saved = chart.faded ? canvas.saveLayerAlpha(chart.clip, 128) : canvas.save();
@@ -315,12 +320,11 @@ final class BoardView extends View {
             if (chart.area != null) canvas.drawPath(chart.area, chart.areaPaint);
             for (int i = 0; i < chart.paths.size(); i++) canvas.drawPath(chart.paths.get(i), chart.pens.get(i));
             canvas.restoreToCount(saved);
-            frame = Math.min(frame, (long) (chart.span / Math.max(1, chart.width) / 4));
+            frame = Math.min(frame, Math.max(SCROLL_FRAME_MS, (long) (chart.span / Math.max(1, chart.width))));
         }
         removeCallbacks(tick);
         if (!current.look.smoothCharts) return;
-        if (frame <= 16) postInvalidateOnAnimation();
-        else if (frame != Long.MAX_VALUE) postDelayed(tick, frame);
+        if (frame != Long.MAX_VALUE) postDelayed(tick, frame);
     }
 
     /** Records the screen without its chart lines, which [onDraw] adds each frame. */

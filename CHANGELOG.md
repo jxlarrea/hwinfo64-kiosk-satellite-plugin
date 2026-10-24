@@ -43,3 +43,4 @@
 
 - Open a new connection to HWiNFO for every update and close it right after. HWiNFO answers one device at a time and waits on an idle connection forever, so a kiosk that lost its network while connected locked every device out until HWiNFO restarted. Several kiosks can now read the same PC.
 - Say that HWiNFO is busy with another device when it takes the connection but does not answer, instead of pointing at the firewall.
+- Scroll charts a pixel at a time and at most ten times a second with Smooth chart scrolling, which cuts the CPU it takes by about three quarters. Every frame costs the same however little it draws, because Kiosk Satellite shows the screensaver as a texture.
